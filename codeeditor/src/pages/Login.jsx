@@ -41,7 +41,7 @@ const Login = () => {
                     navigate('/Projects');
             }).catch((err) => {
                     console.log(err)
-                    toast.error("error in handling upload",{
+                    toast.error("error in login of the user",{
                         position: "top-right",
                         autoClose: 3000,
                         hideProgressBar: false,
@@ -75,7 +75,7 @@ const Login = () => {
         <h1 className='mb-2 font-bold text-[12px]'>ENTER YOUR PASSWORD : </h1>
         <div className='mx-auto flex flex-row border border-slate-900 rounded-md pl-2'>
             <input
-           className='rounded-md align-middle w-[220px] md:w-[360px] h-[35px]'
+           className='focus:outline-none focus:border-none rounded-md align-middle w-[220px] md:w-[360px] h-[35px]'
            placeholder='Enter your password'
            type= {visibilty ? "text" : "password"}
            onChange={

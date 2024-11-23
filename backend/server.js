@@ -101,10 +101,18 @@ app.post('/register',async (req,res) => {
     })
 });
 app.post('/createProject',async (req,res) => {
-    const {userId,projectName,membersId} = req.body;
-    const user = await User.findById(userId);
+    const {projectName,membersId} = req.body;
+    const tokenId = req.headers["authorization"].split(" ")[1];
+    if(!tokenId) {
+        return res.status(401).json({message : "Unauthorized"});
+    }
+    const user_id = jwt.decode(tokenId);
+    if(!user_id){
+        return res.status(404).json({message : "User is not logged in"});
+    }
+    const user = await User.findById(user_id.id);
     if(!user){
-        return res.status(404).json({message : "User not found"});
+        return res.status(404).json({message : "User is not found"});
     }
     const Code = new CodeSchema({
         codeName : projectName,
@@ -113,7 +121,7 @@ app.post('/createProject',async (req,res) => {
                 userId : membersId
             }
         ],
-        leader : userId,
+        leader : user._id,
         code : [
             "// DO AWESOME THINGS"
         ]
@@ -153,6 +161,69 @@ app.get('/getProjects',async(req,res) => {
         return res.status(500).send(err);
     }  
 })
+app.get('/getMembers',async(req,res) => {
+    const tokenId = req.headers["authorization"].split(" ")[1];
+    if(!tokenId) {
+        return res.status(401).json({message : "Unauthorized"});
+    }
+    const user_id = jwt.decode(tokenId);
+    if(!user_id){
+        return res.status(404).json({message : "User is not logged in"});
+    }
+    const user = await User.findById(user_id.id);
+    if(!user){
+        return res.status(404).json({message : "User not found"});
+    }
+    try{
+        const members = await User.find({username : {$ne : user.username}}).select(["username"]).exec();
+        return res.status(200).json({"members" : members});
+    }
+    catch(err){
+        console.log(err);
+        return res.status(500).send(err);
+    }
+})
+app.get('/Projects/getCode',async (req,res) => {
+    const codeId = req.query.codeId;
+    if(!codeId){
+        return res.status(404).json({message : "The provided code id is null"});
+    }
+    try{
+        const code = await CodeSchema.findById(codeId);
+        if(!code){
+            return res.status(404).json({message : "Code not found"});
+        }
+        return res.status(200).json({"code" : code});
+    }
+    catch(err){
+        console.log(err);
+        return res.status(500).send(err);
+    }
+});
+app.post('/Projects/update',async (req,res) => {
+    const {changedCodePos,codeId} = req.body;
+    const codeDoc = await CodeSchema.findById(codeId);
+    try{
+    changedCodePos.forEach(element => {
+        const lineNo = element.lineNumber - 1;
+        if(lineNo >= 0 && lineNo < codeDoc.code.length){
+            codeDoc.code[lineNo] = element.line;
+        }
+        else if(lineNo >= codeDoc.code.length){
+            for(let i = codeDoc.code.length - 1; i < lineNo; i++){
+                codeDoc.code.push("");
+            }
+            codeDoc.code.push(element.line);
+        }
+    });
+    await codeDoc.save();
+    return res.status(200).json({"message" : "Code updated successfully"});
+    }
+    catch(err){
+        console.log(err);
+        return res.status(500).send(err);
+    }
+});
 server.listen(3000,() => {
     console.log("Server is running on port 3000");
 })

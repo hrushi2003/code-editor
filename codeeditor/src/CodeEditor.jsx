@@ -16,20 +16,34 @@ const socket = io('http://localhost:3000',{
     retries: 3,
 });
 const CodeEditor = (props) => {
+    const [changesMap,setChangesMap] = useState([]);
+    const changesMapRef = useRef(changesMap);
+    const token = localStorage.getItem("token");
     const apiCall = axios.create({
         baseURL : "https://emkc.org/api/v2/piston",
         timeout : 6000,
         headers : {
-            'Content-Type' : "application/json"
+            'Content-Type' : "application/json",
+        }
+    });
+   const backendCall = axios.create({
+        baseURL : "http://localhost:3000/Projects",
+        timeout : 6000,
+        headers : {
+            'Content-Type' : "application/json",
+            'Authorization' : `Bearer ${token}`
         }
     });
     const [value,setValue] = useState([]);
     const [loading,setLoading] = useState(false);
     const [code,setCode] = useState("");
+    const [saved,setSaved] = useState(false);
     const [cursorPos,setcursorPos] = useState({lineNumber : 1, column : 1});
     const [selectedLanguage,setSelectedLanguage] = useState('');
     const[languages,setLanguages] = useState([]);
     const [output,setOutput] = useState('');
+    const [members,setMembers] = useState([]);
+    const [contentLoaded,setContentLoaded] = useState(false);
     const editorRef = useRef(null);
     const monacoE = useRef(null);
 
@@ -62,11 +76,38 @@ const CodeEditor = (props) => {
 
     useEffect(() => {
         getLan();
+        return () => {
+            selectedLanguage([])
+        }
     },[]);
-
-    
+    useEffect(() => {
+        changesMapRef.current = changesMap;
+    },[changesMap]);
+   useEffect(() => {
+      const updateCodeAtIntervals = 
+        setInterval(async () => {
+            setSaved(true);
+            const codeData = localStorage.getItem("codeId");
+            const changedMap = changesMapRef.current;
+            console.log(changedMap);
+            if(changedMap.length != 0){
+                await backendCall.post('/update',{
+                    changedCodePos : changedMap,
+                    codeId : codeData
+                }).then((data) => {
+                    console.log(data);
+                    setChangesMap([]);
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }
+            setSaved(false);
+        },20000);
+        return () => clearInterval(updateCodeAtIntervals);
+    },[contentLoaded])
     useEffect(() => {
         socket.emit('cursorChange',cursorPos);
+        console.log(cursorPos);
         getLineContent();
     },[cursorPos]);
 
@@ -74,13 +115,40 @@ const CodeEditor = (props) => {
         editorRef.current = editor;
         monacoE.current = monaco;
         editor.focus();
+        setContentLoaded(true);
         editor.onDidChangeCursorPosition((event) => {
             const {position} = event;
             const lineNumber = position.lineNumber;
             const column = position.column;
             setcursorPos({lineNumber : lineNumber, column: column});
-            onCursorChangeUpdate();
+            onCursorChangeUpdate(lineNumber,column);
         });
+        const codeData = localStorage.getItem("codeId");
+        console.log(codeData);
+       if(codeData){
+            await backendCall.get("/getCode",{
+                params: {
+                    codeId: codeData
+                }
+            }).then((response) => {
+                const ans = response.data.code.code.join('\n');
+                setCode(ans);
+                const assignedMembers = response.data.code.users.map(mem => mem.userId);
+                setMembers(assignedMembers);
+            }).catch((err) => {
+                console.log(err);
+                toast.error("erorr in retriving code",{
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light"
+                })
+            });
+        }
     }
     const onCursorChangeUpdate = () => {
         // some code
@@ -93,7 +161,20 @@ const CodeEditor = (props) => {
         const editor = editorRef.current;
         const line = editor?.getModel().getLineContent(cursorPos.lineNumber);
         socket.emit("changeData",{line : line, position : cursorPos});
-       // console.log(line);
+        let lineNo = cursorPos.lineNumber;
+        let isPresent = false;
+        const updatedChangesMap = changesMap.map((item) => {
+            if(item.lineNumber === lineNo){
+                item.line = line; 
+                isPresent = true;
+            }
+            return item;
+        })
+        if (!updatedChangesMap.some(item => item.lineNumber === lineNo)) {
+            updatedChangesMap.push({ lineNumber: lineNo, line: line ? line : "" });
+        }
+        setChangesMap(updatedChangesMap);
+       // console.log("in the getLine Content" + JSON.stringify(changesMap, null, 2));
     }
     const updateCursorPos = (lineNo,columnNo) => {
         const model = editorRef.current;
@@ -141,6 +222,23 @@ const CodeEditor = (props) => {
             text: changedLine,
             forceMoveMarkers: true
         }]);
+        let lineNo = lineNumber;
+        var data = changesMap;
+        let isPresent = false;
+        for(let i = 0; i < data.length; i++){
+            if(data[i].lineNumber === lineNo){
+                isPresent = true;
+                data[i].line = changedLine;
+               setChangesMap(data);
+                break;
+            }
+        }
+        if(!isPresent){
+            setChangesMap([...data,{
+                lineNumber: lineNo,
+                line: changedLine ? changedLine : ""
+            }]);
+        }
     }
     const runCode = async () => {
         setLoading(true);
@@ -224,9 +322,14 @@ const CodeEditor = (props) => {
      />
      </div>
      <div className='flex mx-2 flex-col'>
+        <div className='flex flex-row'>
         <button onClick={runCode} className='mb-2 w-[100px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
           {loading ?  <ClipLoader className='mx-auto my-auto' color='blue' size={20}/> :"Run Code" }
         </button>
+        <button className='mb-2 w-[200px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
+        { saved ?  <ClipLoader className='mx-auto my-auto' color='blue' size={20}/> :"Saved succesfully" }
+            </button>
+        </div>
         <div className='bg-gray-800 p-2 w-[600px] border rounded-md h-[93vh]'>
             <p className= {output.stdout ? "text-white font-bold ml-2 mt-2" : "text-white font-bold opacity-50 ml-2 mt-2"}>
                 {output ? output.stdout.split('\n').map((element,index) => {

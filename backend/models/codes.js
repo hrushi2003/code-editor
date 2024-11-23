@@ -5,6 +5,10 @@ const code = new mongoose.Schema({
         type : String,
         required : true
     },
+    language : {
+        type : String,
+        default : null
+    },
     users : {
         type : [
         {
