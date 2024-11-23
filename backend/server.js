@@ -150,7 +150,7 @@ app.get('/getProjects',async(req,res) => {
         return res.status(404).json({message : "User not found"});
     }
     try{
-    const projects = await CodeSchema.find({leader : user_id.id}).select([
+    const projects = await CodeSchema.find({users : {$elemMatch : {userId : user._id }}}).select([
         "codeName",
         "users"
     ]).populate({path : 'users.userId', select : 'username'}).exec();

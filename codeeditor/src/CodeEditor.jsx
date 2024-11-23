@@ -5,6 +5,7 @@ import {io} from "socket.io-client";
 import ClipLoader from 'react-spinners/ClipLoader';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 const socket = io('http://localhost:3000',{
     auth: {
       serverOffset: 0
@@ -16,6 +17,7 @@ const socket = io('http://localhost:3000',{
     retries: 3,
 });
 const CodeEditor = (props) => {
+    const navigate = useNavigate();
     const [changesMap,setChangesMap] = useState([]);
     const changesMapRef = useRef(changesMap);
     const token = localStorage.getItem("token");
@@ -76,9 +78,6 @@ const CodeEditor = (props) => {
 
     useEffect(() => {
         getLan();
-        return () => {
-            selectedLanguage([])
-        }
     },[]);
     useEffect(() => {
         changesMapRef.current = changesMap;
@@ -165,7 +164,6 @@ const CodeEditor = (props) => {
         const updatedChangesMap = changesMap.map((item) => {
             if(item.lineNumber === lineNo){
                 item.line = line; 
-                isPresent = true;
             }
             return item;
         })
@@ -225,7 +223,6 @@ const CodeEditor = (props) => {
         const updatedChangesMap = changesMap.map((item) => {
             if(item.lineNumber === lineNo){
                 item.line = changedLine; 
-                isPresent = true;
             }
             return item;
         })
@@ -322,7 +319,13 @@ const CodeEditor = (props) => {
         </button>
         <button className='mb-2 w-[200px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
         { saved ?  <ClipLoader className='mx-auto my-auto' color='blue' size={20}/> :"Saved succesfully" }
-            </button>
+         </button>
+         <button onClick={() => {
+            localStorage.clear();
+            navigate('/');
+         }} className='mb-2 w-[100px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
+           Logout
+        </button>
         </div>
         <div className='bg-gray-800 p-2 w-[600px] border rounded-md h-[93vh]'>
             <p className= {output.stdout ? "text-white font-bold ml-2 mt-2" : "text-white font-bold opacity-50 ml-2 mt-2"}>
