@@ -162,7 +162,6 @@ const CodeEditor = (props) => {
         const line = editor?.getModel().getLineContent(cursorPos.lineNumber);
         socket.emit("changeData",{line : line, position : cursorPos});
         let lineNo = cursorPos.lineNumber;
-        let isPresent = false;
         const updatedChangesMap = changesMap.map((item) => {
             if(item.lineNumber === lineNo){
                 item.line = line; 
@@ -223,22 +222,17 @@ const CodeEditor = (props) => {
             forceMoveMarkers: true
         }]);
         let lineNo = lineNumber;
-        var data = changesMap;
-        let isPresent = false;
-        for(let i = 0; i < data.length; i++){
-            if(data[i].lineNumber === lineNo){
+        const updatedChangesMap = changesMap.map((item) => {
+            if(item.lineNumber === lineNo){
+                item.line = changedLine; 
                 isPresent = true;
-                data[i].line = changedLine;
-               setChangesMap(data);
-                break;
             }
+            return item;
+        })
+        if (!updatedChangesMap.some(item => item.lineNumber === lineNo)) {
+            updatedChangesMap.push({ lineNumber: lineNo, line: changedLine ? changedLine : "" });
         }
-        if(!isPresent){
-            setChangesMap([...data,{
-                lineNumber: lineNo,
-                line: changedLine ? changedLine : ""
-            }]);
-        }
+        setChangesMap(updatedChangesMap);
     }
     const runCode = async () => {
         setLoading(true);
