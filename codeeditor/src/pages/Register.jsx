@@ -87,7 +87,8 @@ const Register = () => {
                         })
                     }
                     localStorage.setItem("token",response.data.token);
-                    navigate('/editor');
+                    localStorage.setItem("userId",response.data.user_id);
+                    navigate('/projects');
                 }).catch((err) => {
                     toast.error(err,{
                         position: "top-right",

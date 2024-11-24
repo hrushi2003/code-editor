@@ -39,6 +39,7 @@ const Login = () => {
             await backend.post('/login', {username,password}).then((response) => {
                     localStorage.setItem("token",response.data.token);
                     sessionStorage.setItem("userId",response.data.user_id);
+                    localStorage.setItem("userId",response.data.user_id);
                     navigate('/Projects');
             }).catch((err) => {
                     console.log(err)

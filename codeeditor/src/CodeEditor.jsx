@@ -17,7 +17,7 @@ const socket = io('https://code-editor-1-0xyt.onrender.com',{
     retries: 3,
 });
 const CodeEditor = (props) => {
-    socket.auth = {username : sessionStorage.getItem("userId") };
+    socket.auth = {username : localStorage.getItem("userId") };
     const navigate = useNavigate();
     const [changesMap,setChangesMap] = useState([]);
     const changesMapRef = useRef(changesMap);
@@ -80,7 +80,7 @@ const CodeEditor = (props) => {
 
     useEffect(() => {
         getLan();
-            socket.emit('authenticate',sessionStorage.getItem('userId'));
+            socket.emit('authenticate',localStorage.getItem('userId'));
             socket.on("connect_error", (err) => {
             // the reason of the error, for example "xhr poll error"
             console.log(err.message);
@@ -148,7 +148,7 @@ const CodeEditor = (props) => {
                 params: {
                     codeId: codeData
                 }
-            }).then((response) => {
+            }).then((response) => { 
                 const ans = response.data.code.code.join('\n');
                 console.log(response.data.code)
                 setCode(ans);
@@ -181,7 +181,7 @@ const CodeEditor = (props) => {
     const getLineContent = () => {
         const editor = editorRef.current;
         const line = editor?.getModel().getLineContent(cursorPos.lineNumber);
-        const mem = sessionStorage.getItem("userId") === members[0] ? members[1] : members[0];
+        const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
         socket.emit("changeData",{line : line, position : cursorPos,member : mem});
         let lineNo = cursorPos.lineNumber;
         const updatedChangesMap = changesMap.map((item) => {
