@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 const Register = () => {
     const backend = axios.create({
-        baseURL: 'http://localhost:3000',
+        baseURL: 'https://code-editor-1-0xyt.onrender.com',
         timeout : 6000,
         headers: {
             'Content-Type': 'application/json',

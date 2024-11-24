@@ -6,7 +6,7 @@ import ClipLoader from 'react-spinners/ClipLoader';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
-const socket = io('http://localhost:3000',{
+const socket = io('https://code-editor-1-0xyt.onrender.com',{
     auth: {
       serverOffset: 0
     },
@@ -30,7 +30,7 @@ const CodeEditor = (props) => {
         }
     });
    const backendCall = axios.create({
-        baseURL : "http://localhost:3000/Projects",
+        baseURL : "https://code-editor-1-0xyt.onrender.com/Projects",
         timeout : 6000,
         headers : {
             'Content-Type' : "application/json",
