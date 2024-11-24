@@ -181,7 +181,8 @@ const CodeEditor = (props) => {
     const getLineContent = () => {
         const editor = editorRef.current;
         const line = editor?.getModel().getLineContent(cursorPos.lineNumber);
-        socket.emit("changeData",{line : line, position : cursorPos,member : members[0]});
+        const mem = sessionStorage.getItem("userId") === members[0] ? members[1] : members[0];
+        socket.emit("changeData",{line : line, position : cursorPos,member : mem});
         let lineNo = cursorPos.lineNumber;
         const updatedChangesMap = changesMap.map((item) => {
             if(item.lineNumber === lineNo){
