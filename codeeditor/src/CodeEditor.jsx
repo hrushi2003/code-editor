@@ -152,7 +152,8 @@ const CodeEditor = (props) => {
                 const ans = response.data.code.code.join('\n');
                 console.log(response.data.code)
                 setCode(ans);
-                setSelectedLanguage(response.data.code.language);
+                const lan = response.data.code.language ? response.data.code.language : "java";
+                setSelectedLanguage(lan);
                 const assignedMembers = response.data.code.users.map(mem => mem.userId);
                 setMembers(assignedMembers);
             }).catch((err) => {
