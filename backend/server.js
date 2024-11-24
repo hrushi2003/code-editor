@@ -13,6 +13,8 @@ const app = express();
 app.use(bodyParser.json());
 app.use(express.json());
 
+
+const users = {};
 const server = createServer(app);
 const io = new Server(server,{
     path : '/socket',
@@ -33,14 +35,23 @@ io.on("connection", socket => {
         console.log(data);
         callback();
     });
+    socket.on("authenticate", (userId,callback) => {
+        socket.userId = userId;
+        users[userId] = socket.id;
+        callback();
+    });
     socket.on("changeData",(data,callback) => {
-        const {line,position} = data;
+        const {line,position,member} = data;
         if (line == null || position == null) {
             callback();
             return;
         }
-        socket.broadcast.emit("updateCursorAndData",{line,position});
+       if(users[member]) socket.to(users[member]).emit("updateCursorAndData",{line,position});
         callback();
+    });
+    socket.on("disconnect", () => {
+        console.log("Client disconnected");
+        delete users[socket.userId];
     });
 });
 
@@ -114,13 +125,10 @@ app.post('/createProject',async (req,res) => {
     if(!user){
         return res.status(404).json({message : "User is not found"});
     }
+    membersId.push(user._id);
     const Code = new CodeSchema({
         codeName : projectName,
-        users : [
-            {
-                userId : membersId
-            }
-        ],
+        users : membersId.map(id => ({userId : id})),
         leader : user._id,
         code : [
             "// DO AWESOME THINGS"
@@ -201,9 +209,10 @@ app.get('/Projects/getCode',async (req,res) => {
     }
 });
 app.post('/Projects/update',async (req,res) => {
-    const {changedCodePos,codeId} = req.body;
+    const {changedCodePos,codeId,language} = req.body;
     const codeDoc = await CodeSchema.findById(codeId);
     try{
+        codeDoc.language = language;
     changedCodePos.forEach(element => {
         const lineNo = element.lineNumber - 1;
         if(lineNo >= 0 && lineNo < codeDoc.code.length){

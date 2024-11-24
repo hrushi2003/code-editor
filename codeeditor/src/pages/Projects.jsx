@@ -10,6 +10,7 @@ import axios from 'axios';
 const Projects = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
+    const currUser = sessionStorage.getItem("userId");
     console.log(token);
     const [changeState,setChangeState] = useState(false);
     const [projects, setProjects] = useState([]);
@@ -246,9 +247,14 @@ const Projects = () => {
                 <div className='ml-2 my-auto text-black flex-row border rounded-lg bg-green-400 opacity-40 w-[53%] h-[75%]'>
                     <div className='ml-2 w-[100%] my-auto h-[100%] flex flex-row'>
                         {element.users?.map((ele,indx) => {
-                            return (
-                                <div key={indx} className='my-auto'><p className='text-[15px] font-bold'>{indx + 1}. {ele.userId.username}</p></div>
-                            )
+                            if(ele.userId._id != currUser){
+                                return (
+                                    <div key={indx} className='my-auto'><p className='text-[15px] font-bold'>{indx + 1}. {ele.userId.username}</p></div>
+                                )
+                            }
+                            else{
+                                return "";
+                            }
                         })}
                     </div>
                 </div>

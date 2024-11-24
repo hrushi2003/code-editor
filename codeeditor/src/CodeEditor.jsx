@@ -17,6 +17,7 @@ const socket = io('http://localhost:3000',{
     retries: 3,
 });
 const CodeEditor = (props) => {
+    socket.auth = {username : sessionStorage.getItem("userId") };
     const navigate = useNavigate();
     const [changesMap,setChangesMap] = useState([]);
     const changesMapRef = useRef(changesMap);
@@ -42,6 +43,7 @@ const CodeEditor = (props) => {
     const [saved,setSaved] = useState(false);
     const [cursorPos,setcursorPos] = useState({lineNumber : 1, column : 1});
     const [selectedLanguage,setSelectedLanguage] = useState('');
+    const languageRef = useRef(selectedLanguage);
     const[languages,setLanguages] = useState([]);
     const [output,setOutput] = useState('');
     const [members,setMembers] = useState([]);
@@ -78,21 +80,38 @@ const CodeEditor = (props) => {
 
     useEffect(() => {
         getLan();
+            socket.emit('authenticate',sessionStorage.getItem('userId'));
+            socket.on("connect_error", (err) => {
+            // the reason of the error, for example "xhr poll error"
+            console.log(err.message);
+            // some additional description, for example the status code of the initial HTTP response
+            console.log(err.description);
+            // some additional context, for example the XMLHttpRequest object
+            console.log(err.context);
+       });
+      return () => {
+        socket.disconnect();
+      }
     },[]);
     useEffect(() => {
         changesMapRef.current = changesMap;
     },[changesMap]);
+    useEffect(() => {
+        languageRef.current = selectedLanguage;
+    },[selectedLanguage]);
    useEffect(() => {
       const updateCodeAtIntervals = 
         setInterval(async () => {
             setSaved(true);
             const codeData = localStorage.getItem("codeId");
             const changedMap = changesMapRef.current;
+            const currLan = languageRef.current;
             console.log(changedMap);
             if(changedMap.length != 0){
                 await backendCall.post('/update',{
                     changedCodePos : changedMap,
-                    codeId : codeData
+                    codeId : codeData,
+                    language : currLan
                 }).then((data) => {
                     console.log(data);
                     setChangesMap([]);
@@ -131,7 +150,9 @@ const CodeEditor = (props) => {
                 }
             }).then((response) => {
                 const ans = response.data.code.code.join('\n');
+                console.log(response.data.code)
                 setCode(ans);
+                setSelectedLanguage(response.data.code.language);
                 const assignedMembers = response.data.code.users.map(mem => mem.userId);
                 setMembers(assignedMembers);
             }).catch((err) => {
@@ -159,7 +180,7 @@ const CodeEditor = (props) => {
     const getLineContent = () => {
         const editor = editorRef.current;
         const line = editor?.getModel().getLineContent(cursorPos.lineNumber);
-        socket.emit("changeData",{line : line, position : cursorPos});
+        socket.emit("changeData",{line : line, position : cursorPos,member : members[0]});
         let lineNo = cursorPos.lineNumber;
         const updatedChangesMap = changesMap.map((item) => {
             if(item.lineNumber === lineNo){
@@ -304,7 +325,7 @@ const CodeEditor = (props) => {
     height = "95vh"
     width= "600px"
     theme='vs-dark'
-    defaultLanguage = "javascript"
+    defaultLanguage = {selectedLanguage ? selectedLanguage : "java"}
     language= {selectedLanguage.split('#')[0]}
     defaultValue = " // comment"
     value= {code}
