@@ -19,7 +19,7 @@ const socket = io('https://code-editor-1-0xyt.onrender.com',{
 const CodeEditor = (props) => {
     socket.auth = {username : localStorage.getItem("userId") };
     const navigate = useNavigate();
-    const [changesMap,setChangesMap] = useState([]);
+    const [changesMap,setChangesMap] = useState(new Map());
     const changesMapRef = useRef(changesMap);
     const token = localStorage.getItem("token");
     const apiCall = axios.create({
@@ -42,6 +42,7 @@ const CodeEditor = (props) => {
     const [code,setCode] = useState("");
     const [saved,setSaved] = useState(false);
     const [cursorPos,setcursorPos] = useState({lineNumber : 1, column : 1});
+    const cursorRef = useRef(cursorPos);
     const [selectedLanguage,setSelectedLanguage] = useState('');
     const languageRef = useRef(selectedLanguage);
     const[languages,setLanguages] = useState([]);
@@ -104,17 +105,17 @@ const CodeEditor = (props) => {
         setInterval(async () => {
             setSaved(true);
             const codeData = localStorage.getItem("codeId");
-            const changedMap = changesMapRef.current;
+            const changedMap = Array.from(changesMapRef.current,([key,value]) => ({lineNumber : key, line : value}));
             const currLan = languageRef.current;
             console.log(changedMap);
-            if(changedMap.length != 0){
+            if(changedMap.size != 0){
                 await backendCall.post('/update',{
                     changedCodePos : changedMap,
                     codeId : codeData,
                     language : currLan
                 }).then((data) => {
                     console.log(data);
-                    setChangesMap([]);
+                    setChangesMap(new Map());
                 }).catch((err) => {
                     console.log(err);
                 });
@@ -125,6 +126,7 @@ const CodeEditor = (props) => {
     },[contentLoaded])
     useEffect(() => {
         socket.emit('cursorChange',cursorPos);
+        cursorRef.current = cursorPos;
         console.log(cursorPos);
         getLineContent();
     },[cursorPos]);
@@ -140,6 +142,27 @@ const CodeEditor = (props) => {
             const column = position.column;
             setcursorPos({lineNumber : lineNumber, column: column});
             onCursorChangeUpdate(lineNumber,column);
+        });
+        editor.onKeyDown((event) => {
+            if(event.code === "Enter"){
+                //const lineNumber = position.lineNumber;
+               // const column = position.column;
+               console.log(editor.getPosition(),"the code is trying to get the pos");
+               const position = editor.getPosition();
+               const currentLine = position.lineNumber;
+               const model = editor.getModel();
+               const totalLines = model.getLineCount();
+               const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
+           
+               // Track lines from the current line to the end
+               const linesFromCurrent = changesMap;
+               for (let i = currentLine; i <= totalLines; i++) {
+                    linesFromCurrent.set(i,model.getLineContent(i));
+                    socket.emit("changeData",{line : model.getLineContent(i), position :{lineNumber : i,column : 1},member : mem});
+               }
+                setChangesMap(linesFromCurrent);
+               // onCursorChangeUpdate(lineNumber,column);
+            }
         });
         const codeData = localStorage.getItem("codeId");
         console.log(codeData);
@@ -184,15 +207,8 @@ const CodeEditor = (props) => {
         const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
         socket.emit("changeData",{line : line, position : cursorPos,member : mem});
         let lineNo = cursorPos.lineNumber;
-        const updatedChangesMap = changesMap.map((item) => {
-            if(item.lineNumber === lineNo){
-                item.line = line; 
-            }
-            return item;
-        })
-        if (!updatedChangesMap.some(item => item.lineNumber === lineNo)) {
-            updatedChangesMap.push({ lineNumber: lineNo, line: line ? line : "" });
-        }
+        const updatedChangesMap = new Map(changesMap);
+        updatedChangesMap.set(lineNo, line);
         setChangesMap(updatedChangesMap);
        // console.log("in the getLine Content" + JSON.stringify(changesMap, null, 2));
     }
@@ -243,16 +259,10 @@ const CodeEditor = (props) => {
             forceMoveMarkers: true
         }]);
         let lineNo = lineNumber;
-        const updatedChangesMap = changesMap.map((item) => {
-            if(item.lineNumber === lineNo){
-                item.line = changedLine; 
-            }
-            return item;
-        })
-        if (!updatedChangesMap.some(item => item.lineNumber === lineNo)) {
-            updatedChangesMap.push({ lineNumber: lineNo, line: changedLine ? changedLine : "" });
-        }
+        const updatedChangesMap = new Map(changesMap);
+        updatedChangesMap.set(lineNo, changedLine);
         setChangesMap(updatedChangesMap);
+
     }
     const runCode = async () => {
         setLoading(true);

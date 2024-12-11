@@ -36,7 +36,7 @@ io.on("connection", socket => {
         callback();
     });
     socket.on("authenticate", (userId,callback) => {
-        socket.userId = userId;
+       socket.userId = userId;
         users[userId] = socket.id;
         callback();
     });
