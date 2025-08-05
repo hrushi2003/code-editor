@@ -186,10 +186,10 @@ const Projects = () => {
                     </div>
                 </div>
             <div className='flex mx-auto my-auto flex-col'>
-         <div className='shadow-2xl mt-[40px] border border-lime-500 w-[300px] md:w-max h-max p-5 rounded-lg flex flex-col bg-white'>
+         <div className='shadow-2xl mt-[40px] border border-lime-500 w-[300px] md:w-[100%] h-max p-5 rounded-lg flex flex-col bg-white'>
          <h1 className='mb-2 font-bold text-[12px]'>ENTER YOUR PROJECT NAME : </h1>
            <input
-           className='mb-4 border border-slate-900 rounded-md p-2 w-[400px] h-[35px]'
+           className='mb-4 border border-slate-900 rounded-md p-2 w-[100%] h-[35px]'
            placeholder='Enter your Project Name'
            type='text'
            onChange={(e) => {
@@ -220,7 +220,7 @@ const Projects = () => {
             
         </div>
         <div
-        className='w-[800px] p-2 z-0 flex mx-auto mt-[100px] border-[4px] shadow-2xl shadow-blue-200 border-blue-200 rounded-lg h-[600px]'
+        className='w-[95%] p-2 z-0 flex mx-auto mt-[100px] border-[4px] shadow-2xl shadow-blue-200 border-blue-200 rounded-lg h-[600px]'
         >
             <div className='flex z-0 w-[100%] h-[100%] overflow-y-scroll flex-col'>
             <div className='w-[100%] z-10 h-[80px] mt-3 mx-auto rounded-lg border-[3px] cursor-pointer hover:bg-blue-100 active:bg-blue-400 border-green-100 flex flex-row'>
@@ -245,7 +245,7 @@ const Projects = () => {
                <div className='w-[45%] my-auto'><h1 className='text-[20px] font-bold my-auto ml-2'
                >{element.codeName}</h1></div>
                 <div className='ml-2 my-auto text-black flex-row border rounded-lg bg-green-400 opacity-40 w-[53%] h-[75%]'>
-                    <div className='ml-2 w-[100%] my-auto h-[100%] flex flex-row'>
+                    <div className='ml-2 w-[100%] my-auto gap-[10px] h-[100%] flex flex-row'>
                         {element.users?.map((ele,indx) => {
                             if(ele.userId._id != currUser){
                                 return (

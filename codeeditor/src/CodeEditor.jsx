@@ -4,6 +4,8 @@ import axios from "axios";
 import {io} from "socket.io-client";
 import ClipLoader from 'react-spinners/ClipLoader';
 import { toast, ToastContainer } from 'react-toastify';
+import { Button, Splitter,Upload,UploadProps } from 'antd';
+import {UploadOutlined} from '@ant-design/icons';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 const socket = io('https://code-editor-1-0xyt.onrender.com',{
@@ -109,6 +111,17 @@ const CodeEditor = (props) => {
             const currLan = languageRef.current;
             console.log(changedMap);
             if(changedMap.size != 0){
+                const model = editorRef.current;
+                const reCheckedData = model.getValue().split('\n');
+                changedMap.map((indx,data) => {
+                    const line = data.line;
+                    const lineNumber = data.lineNumber;
+                    const currLine = reCheckedData[lineNumber - 1];
+                    if(line != currLine){
+                        return currLine;
+                    }
+                    return line;
+                })
                 await backendCall.post('/update',{
                     changedCodePos : changedMap,
                     codeId : codeData,
@@ -319,9 +332,18 @@ const CodeEditor = (props) => {
            }
         }
     }
+    const getChangedLines = () => {
+        editorRef.current.onDidChangeModelContent((e) => {
+        })
+    }
   return (
     <div className='h-max my-2 w-max overflow-scroll flex flex-row'>
         <ToastContainer />
+        <Splitter style={{
+            height: 950,
+            width: 1500,
+        }}>
+        <Splitter.Panel position="left" defaultSize="60%" minSize="20%" maxSize ="90%">
         <div className='flex flex-col'>
         <div className='flex mx-2 flex-row'>
         <select value={selectedLanguage} onChange={handleLanguageChange} className='w-max h-[30px] bg-blue-200 font-bold text-blue-600 border-2 rounded-md' id="languages" name="languages">
@@ -329,13 +351,17 @@ const CodeEditor = (props) => {
                 return (<option key={index} value={lan.language +'#'+lan.version} name = {lan.language}>{lan.language} {lan.version}</option>)
             }) : ""}
         </select>
-        <input className='ml-4 bg-white border-2 rounded-md border-blue-400' type='file'
-        onChange={handleFileChange} />
+        <Upload {...props}>
+        <Button icon = {<UploadOutlined />} className='ml-4 bg-white border-2 rounded-md border-blue-400' type='file'
+        onChange={handleFileChange}>
+            Click to Upload
+        </Button>
+        </Upload>
         </div>
     <Editor
     className='my-3 mx-2 border border-blue-400'
     height = "95vh"
-    width= "600px"
+    width= "100%"
     theme='vs-dark'
     defaultLanguage = {selectedLanguage ? selectedLanguage : "java"}
     language= {selectedLanguage.split('#')[0]}
@@ -345,6 +371,8 @@ const CodeEditor = (props) => {
     onChange={(e) => formatCode(e)}
      />
      </div>
+     </Splitter.Panel>
+     <Splitter.Panel>
      <div className='flex mx-2 flex-col'>
         <div className='flex flex-row'>
         <button onClick={runCode} className='mb-2 w-[100px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
@@ -369,6 +397,8 @@ const CodeEditor = (props) => {
             </p>
         </div>
      </div>
+     </Splitter.Panel>
+     </Splitter>
      </div>
   );
 }

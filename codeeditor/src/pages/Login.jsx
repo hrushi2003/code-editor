@@ -5,8 +5,10 @@ import eye from "./eye.png";
 import eyeClose from "./eyeClose.png";
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { Button,Input } from 'antd';
 import code from "./code.png";
 import axios from 'axios';
+import { use } from 'react';
 const Login = () => {
     const backend = axios.create({
         baseURL: 'https://code-editor-1-0xyt.onrender.com',
@@ -19,10 +21,12 @@ const Login = () => {
     const [visibilty,setVisibility] = useState(false);
     const [username,setUsername] = useState("");
     const [password,setPassword] = useState("");
+    const [loading,setLoading] = useState(false);
     const changeVisibility = () => {
         setVisibility(!visibilty);
     }
     const handleLogin = async() => {
+        setLoading(true);
         if(username === "" || password === ""){
             toast.error("Please fill all the fields",{
                 position: "top-right",
@@ -43,7 +47,7 @@ const Login = () => {
                     navigate('/Projects');
             }).catch((err) => {
                     console.log(err)
-                    toast.error("error in login of the user",{
+                    toast.error(err.response.data.message,{
                         position: "top-right",
                         autoClose: 3000,
                         hideProgressBar: false,
@@ -55,18 +59,20 @@ const Login = () => {
                     });
             })
         }
+        setLoading(false);
     }
   return (
     <div className=''>
        <ToastContainer/>
         <img
-        className='mx-auto w-[200px] h-[120px] rounded-md flex mt-[120px] md:mt-[120px] shadow-lg shadow-blue-400'
+        className='mx-auto w-[300px] h-[180px] rounded-md flex mt-[120px] md:mt-[120px] shadow-lg shadow-blue-400'
          src = {code} alt='logo' />
-         <div className='ml-[20px] md:ml-[520px] shadow-2xl mt-[40px] border border-lime-500 w-[300px] md:w-max h-max p-5 rounded-lg flex flex-col bg-white'>
+         <div className='mx-auto shadow-2xl mt-[40px] border border-lime-500 w-[300px] md:w-max h-max p-5 rounded-lg flex flex-col bg-white'>
          <h1 className='mb-2 font-bold text-[12px]'>ENTER YOUR USERNAME : </h1>
-           <input
+           <Input
            className='mb-4 border border-slate-900 rounded-md p-2 w-[260px] md:w-[400px] h-[35px]'
            placeholder='Enter your username'
+           variant={username.length != 0 ? 'filled' : ''}
            onChange={
             (e) => {
                 setUsername(e.target.value);
@@ -76,10 +82,11 @@ const Login = () => {
             />
         <h1 className='mb-2 font-bold text-[12px]'>ENTER YOUR PASSWORD : </h1>
         <div className='mx-auto flex flex-row border border-slate-900 rounded-md pl-2'>
-            <input
+            <Input
            className='focus:outline-none focus:border-none rounded-md align-middle w-[220px] md:w-[360px] h-[35px]'
            placeholder='Enter your password'
            type= {visibilty ? "text" : "password"}
+           variant={password.length != 0 ? 'filled' : ''}
            onChange={
             (e) => {
                 setPassword(e.target.value);
@@ -87,12 +94,14 @@ const Login = () => {
           />
           <button onClick={changeVisibility} className='w-[25px] ml-1 mx-auto my-auto h-[35px]'><img className='mx-auto align-middle w-[25px] pr-2' alt='eye' src= {visibilty ? eye : eyeClose}/></button>
           </div>
-            <button
+            <Button
+            type='primary'
+            loading = {loading}
              className='mt-2 border rounded-md h-[35px] font-bold text-[15px]'
              onClick={handleLogin}
              >
             LOG IN
-            </button>
+            </Button>
             <p className='mt-3 mx-auto text-[13px] font-bold'>
                 New to this app ? 
                 <Link className='text-blue-600' to="/Register"> Register</Link>

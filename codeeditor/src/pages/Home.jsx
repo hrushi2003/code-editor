@@ -1,6 +1,7 @@
 import React from 'react'
 import code from "./code.png"
 import { useNavigate } from 'react-router-dom'
+import {Button} from "antd";
 const Home = () => {
     const navigate = useNavigate();
   return (
@@ -11,10 +12,11 @@ const Home = () => {
          />
        <h1 className='mx-auto text-center font-bold mb-2 text-green-600'
        >We're delighted you're here with us! Let's make sure you find exactly what you're looking for.</h1>
-       <button
-       className='transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-105 border-[2px] h-[40px] shadow-xl bg-green-400 rounded-md'
+       <Button
+       type='primary'
+       className='transition ease-in-out delay-150 hover:-translate-y-1 text-white hover:scale-105 border-[2px] h-[40px] shadow-xl font-bold rounded-md'
        onClick={() => navigate('/login')}
-       >GET STARTED</button>
+       >GET STARTED</Button>
     </div>
   )
 }
