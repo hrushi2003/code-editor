@@ -332,10 +332,18 @@ const CodeEditor = (props) => {
            }
         }
     }
-    const getChangedLines = () => {
-        editorRef.current.onDidChangeModelContent((e) => {
-        })
+    const getChangedLines = (changes) => {
+        changes.changes.forEach((e) => {
+            const start = e.range.startLineNumber;
+            const end = e.range.endLineNumber;
+            for(let lines = start;lines <= end; lines++){
+                console.log(lines);
+            }
+        });
     }
+    editorRef.current.onDidChangeModelContent((e) => {
+        getChangedLines(e);
+    });
   return (
     <div className='h-max my-2 w-max overflow-scroll flex flex-row'>
         <ToastContainer />
@@ -351,12 +359,10 @@ const CodeEditor = (props) => {
                 return (<option key={index} value={lan.language +'#'+lan.version} name = {lan.language}>{lan.language} {lan.version}</option>)
             }) : ""}
         </select>
-        <Upload {...props}>
         <Button icon = {<UploadOutlined />} className='ml-4 bg-white border-2 rounded-md border-blue-400' type='file'
         onChange={handleFileChange}>
             Click to Upload
         </Button>
-        </Upload>
         </div>
     <Editor
     className='my-3 mx-2 border border-blue-400'
