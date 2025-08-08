@@ -341,9 +341,9 @@ const CodeEditor = (props) => {
             }
         });
     }
-    editorRef.current.onDidChangeModelContent((e) => {
+   /* editorRef.current.onDidChangeModelContent((e) => {
         getChangedLines(e);
-    });
+    });*/
   return (
     <div className='h-max my-2 w-max overflow-scroll flex flex-row'>
         <ToastContainer />
@@ -365,7 +365,7 @@ const CodeEditor = (props) => {
         </Button>
         </div>
     <Editor
-    className='my-3 mx-2 border border-blue-400'
+    className='my-3 mx-2 border border-blue-400' 
     height = "95vh"
     width= "100%"
     theme='vs-dark'

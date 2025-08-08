@@ -111,6 +111,36 @@ app.post('/register',async (req,res) => {
         return res.status(500).send(err);
     })
 });
+app.get('/getUser', async (req,res) => {
+    const {userId} = req.body;
+    const user = await User.findById(userId);
+    if(!user){
+        return res.status(404).json({message : "User not found"});
+    }
+    return res.status(200).json({
+        "username" : user.username,
+        "email" : user.email
+    })
+});
+
+app.patch('/updatePass',async (req,res) => {
+    const {userId,oldPassword,newPassword} = req.body;
+    const user = await User.findById(userId);
+    const isValidPassword = await bcrypt.compare(oldPassword,user.password);
+    if(!isValidPassword){
+        return res.status(401).json({message : "Invalid password"});
+    }
+    await bcrypt.hash(newPassword,10).then((hash) => {
+        user.password = hash;
+        user.save().then((data) => {
+            return res.json({"success":true,"message" : "Password updated succesfully"});
+        }).catch((err) => {
+            return res.status(400).send("Error updating password",err);
+        })
+    }).catch((err) => {
+        return res.status(500).send(err);
+    })
+});
 app.post('/createProject',async (req,res) => {
     const {projectName,membersId} = req.body;
     const tokenId = req.headers["authorization"].split(" ")[1];
@@ -160,7 +190,8 @@ app.get('/getProjects',async(req,res) => {
     try{
     const projects = await CodeSchema.find({users : {$elemMatch : {userId : user._id }}}).select([
         "codeName",
-        "users"
+        "users",
+        "leader"
     ]).populate({path : 'users.userId', select : 'username'}).exec();
     return res.status(200).json({"projects" : projects});
     }
