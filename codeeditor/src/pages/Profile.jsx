@@ -57,7 +57,7 @@ export const Profile = () => {
             setLoading(false);
             return;
         }
-        await apiCall.get('/updatePass',{
+        await apiCall.patch('/updatePass',{
             userId : user,
             oldPassword : profile.password.password,
             newPassword : newPass
@@ -97,6 +97,32 @@ export const Profile = () => {
                 navigate('/');
             }
         }
+        console.log(token,user);
+        apiCall.get('/getUser',{
+            userId : user
+        }).then((data) => {
+            setProfile({
+                username : {
+                    name : data.data.username,
+                    isActive : false
+                },
+                email : {
+                    email : data.data.email,
+                    isActive : false
+                }
+            });
+        }).catch((err) => {
+            toast.error("Error fetching user data",{
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme : "light"
+            });
+        })
     },[])
   return (
     <div className='w-[100%] h-[100%] flex flex-col justify-center items-center'>
@@ -179,22 +205,10 @@ export const Profile = () => {
                 <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>PASSWORD : </h1>
                 <div className='w-[48%] my-auto items-center text-gray-400'>
                     <Input className='w-[100%] text-[16px] font-bold'
-                    type = {profile.password.isActive ? "text" : "password"}
+                    type = "password"
                     value={profile.password.password}
                     variant='filled'
                     readOnly
-                    onFocus={() => {
-                        setProfile((prev) => ({
-                            ...prev,
-                            password: { ...prev.password, isActive: !prev.password.isActive }
-                        }))
-                    }}
-                    onBlur={() => {
-                        setProfile((prev) => ({
-                            ...prev,
-                            password: { ...prev.password, isActive: !prev.password.isActive }
-                        }))
-                    }}
                     >
                     </Input>  
                 </div>
