@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import  axios from 'axios';
-import { Button, Input, Modal } from 'antd';
+import { Button, Input, Modal,Spin } from 'antd';
 import { toast, ToastContainer } from 'react-toastify';
+import { MdDelete } from 'react-icons/md';
+import { MdEdit } from 'react-icons/md';
 
 export const Profile = () => {
-    const user = sessionStorage.getItem('userId');
+    const user = localStorage.getItem('userId');
     const [open,setOpen] = useState(false);
+    const [spinning,setSpinning] = useState(false);
     const [loading,setLoading] = useState(false);
     const [profile, setProfile] = useState({
         username : {
@@ -89,6 +92,7 @@ export const Profile = () => {
         setOpen(false);
     }
     useEffect(() => {
+        setSpinning(true);
         if(!token || token === ""){
             return () => {
                 setProfile({});
@@ -123,10 +127,12 @@ export const Profile = () => {
                 theme : "light"
             });
         })
+        setSpinning(false);
     },[])
   return (
     <div className='w-[100%] h-[100%] flex flex-col justify-center items-center'>
         <ToastContainer />
+        <Spin spinning = {spinning} percent={40} fullscreen/>
         <div className='flex flex-col mt-5 mx-auto items-center justify-center h-[100%]'>
             <h1 className='text-[25px] font-bold text-blue-300'>PROFILE</h1>
         </div>
@@ -203,7 +209,7 @@ export const Profile = () => {
             </div>
             <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
                 <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>PASSWORD : </h1>
-                <div className='w-[48%] my-auto items-center text-gray-400'>
+                <div className='w-[55%] my-auto items-center text-gray-400'>
                     <Input className='w-[100%] text-[16px] font-bold'
                     type = "password"
                     value={profile.password.password}
@@ -249,9 +255,17 @@ export const Profile = () => {
             <div className='w-[100%] h-[60%] bg-blue-400 p-2 flex flex-col rounded-lg mt-5 items-center'>
                 <h1 className='text-white text-[15px] font-bold mt-2'>YOUR PROJECTS</h1>
                 <div className='bg-white w-[98%] flex flex-col items-center gap-2 h-[90%] overflow-auto hide-scrollbar rounded-lg mt-2 p-2'>
-                    <div className='w-[100%] flex bg-green-50 p-2 h-[50px] rounded-lg items-center'>
-                        <h1 className='text-[15px] flex font-bold text-blue-400 my-auto'>Project
-                        1</h1>
+                    <div className='w-[100%] flex flex-row bg-green-50 p-2 h-[50px] rounded-lg items-center'>
+                        <h1 className='text-[15px] flex font-bold text-blue-400 my-auto'>Project1</h1>
+                        <div className='flex ml-auto gap-2 items-center'>
+                            <MdDelete
+                             className='text-red-400 cursor-pointer'
+                             size={20}
+                             ></MdDelete>
+                             <MdEdit className='text-green-400 cursor-pointer'
+                             size={20}
+                             ></MdEdit>
+                        </div>
                     </div>
                 </div>
             </div>

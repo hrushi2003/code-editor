@@ -112,10 +112,17 @@ app.post('/register',async (req,res) => {
     })
 });
 app.get('/getUser', async (req,res) => {
-    const {userId} = req.body;
-    const user = await User.findById(userId);
+    const tokenId = req.headers["authorization"].split(" ")[1];
+    if(!tokenId) {
+        return res.status(401).json({message : "Unauthorized"});
+    }
+    const user_id = jwt.decode(tokenId);
+    if(!user_id){
+        return res.status(404).json({message : "User is not logged in"});
+    }
+    const user = await User.findById(user_id.id);
     if(!user){
-        return res.status(404).json({message : "User not found"});
+        return res.status(404).json({message : user, userId });
     }
     return res.status(200).json({
         "username" : user.username,
