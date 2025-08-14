@@ -131,16 +131,16 @@ const CodeEditor = (props) => {
                 console.log(err);      
             }*/
            console.log(patched.current);
-              /*  await backendCall.post('/update',{
-                    changedCodePos : changedMap,
+               await backendCall.post('/update',{
+                    changedCodePos : patched.current,
                     codeId : codeData,
                     language : currLan
                 }).then((data) => {
                     console.log(data);
-                    setChangesMap(new Map());
+                    patched.current = [];
                 }).catch((err) => {
                     console.log(err);
-                });*/
+                });
               //  setPatched([]);
             setSaved(false);
         },20000);
