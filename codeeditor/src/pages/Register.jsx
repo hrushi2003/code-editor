@@ -57,7 +57,7 @@ const Register = () => {
                 theme : "light"
             })
         }else{
-            if(password !== confirm || (password == confirm && isValidPass)){
+            if(password !== confirm || (password == confirm && !isValidPass)){
                 toast.error("Passwords do not match",{
                     position: "top-right",
                     autoClose: 2000,

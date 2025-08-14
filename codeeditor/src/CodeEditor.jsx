@@ -22,7 +22,10 @@ const CodeEditor = (props) => {
     socket.auth = {username : localStorage.getItem("userId") };
     const navigate = useNavigate();
     const [changesMap,setChangesMap] = useState(new Map());
+    const patched = useRef([]);
+    const didInit = useRef(false);
     const changesMapRef = useRef(changesMap);
+    const userId = localStorage.getItem('userId');
     const token = localStorage.getItem("token");
     const apiCall = axios.create({
         baseURL : "https://emkc.org/api/v2/piston",
@@ -61,9 +64,7 @@ const CodeEditor = (props) => {
         catch(err){
             console.log(err);
         }
-        //Object.keys(languages).map(key => console.log(key));
     }
-
     const getLanguages = async () => {
         await apiCall.get('/runtimes').then((response) => {
             setLanguages(response.data);
@@ -83,7 +84,8 @@ const CodeEditor = (props) => {
 
     useEffect(() => {
         getLan();
-            socket.emit('authenticate',localStorage.getItem('userId'));
+            socket.emit('authenticate',userId);
+            console.log("Web socket connected");
             socket.on("connect_error", (err) => {
             // the reason of the error, for example "xhr poll error"
             console.log(err.message);
@@ -95,7 +97,7 @@ const CodeEditor = (props) => {
       return () => {
         socket.disconnect();
       }
-    },[]);
+    },[userId]);
     useEffect(() => {
         changesMapRef.current = changesMap;
     },[changesMap]);
@@ -107,9 +109,10 @@ const CodeEditor = (props) => {
         setInterval(async () => {
             setSaved(true);
             const codeData = localStorage.getItem("codeId");
-            const changedMap = Array.from(changesMapRef.current,([key,value]) => ({lineNumber : key, line : value}));
+            /*const changedMap = Array.from(changesMapRef.current,([key,value]) => ({lineNumber : key, line : value}));
             const currLan = languageRef.current;
             console.log(changedMap);
+            try{
             if(changedMap.size != 0){
                 const model = editorRef.current;
                 const reCheckedData = model.getValue().split('\n');
@@ -122,7 +125,13 @@ const CodeEditor = (props) => {
                     }
                     return line;
                 })
-                await backendCall.post('/update',{
+            }
+            }
+            catch(err){
+                console.log(err);      
+            }*/
+           console.log(patched.current);
+              /*  await backendCall.post('/update',{
                     changedCodePos : changedMap,
                     codeId : codeData,
                     language : currLan
@@ -131,20 +140,21 @@ const CodeEditor = (props) => {
                     setChangesMap(new Map());
                 }).catch((err) => {
                     console.log(err);
-                });
-            }
+                });*/
+              //  setPatched([]);
             setSaved(false);
         },20000);
         return () => clearInterval(updateCodeAtIntervals);
     },[contentLoaded])
     useEffect(() => {
-        socket.emit('cursorChange',cursorPos);
+       // socket.emit('cursorChange',cursorPos);
         cursorRef.current = cursorPos;
         console.log(cursorPos);
         getLineContent();
     },[cursorPos]);
 
     const handleEditorMount = async(editor,monaco) => {
+       try{
         editorRef.current = editor;
         monacoE.current = monaco;
         editor.focus();
@@ -156,6 +166,10 @@ const CodeEditor = (props) => {
             setcursorPos({lineNumber : lineNumber, column: column});
             onCursorChangeUpdate(lineNumber,column);
         });
+         }
+       catch(err){
+        console.log(err);
+       }
         editor.onKeyDown((event) => {
             if(event.code === "Enter"){
                 //const lineNumber = position.lineNumber;
@@ -177,6 +191,26 @@ const CodeEditor = (props) => {
                // onCursorChangeUpdate(lineNumber,column);
             }
         });
+        editor.onDidChangeModelContent((event) => {
+            if(!didInit.current){
+                didInit.current = true;
+                return;
+            }
+            const changes = event.changes;
+            for (const change of changes) {
+                const {range, text} = change;
+                const {startLineNumber, startColumn, endLineNumber, endColumn} = range;
+                const startIndx = startLineNumber - 1;
+                const deleteCount = endLineNumber - startLineNumber + 1;
+                const newLines = text.split("\n");
+                console.log(startIndx,deleteCount,newLines);
+                patched.current.push({
+                    startIndx,
+                    deleteCount,
+                    newLines
+                });
+            }
+        })
         const codeData = localStorage.getItem("codeId");
         console.log(codeData);
        if(codeData){
@@ -217,6 +251,7 @@ const CodeEditor = (props) => {
     const getLineContent = () => {
         const editor = editorRef.current;
         const line = editor?.getModel().getLineContent(cursorPos.lineNumber);
+        console.log(members);
         const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
         socket.emit("changeData",{line : line, position : cursorPos,member : mem});
         let lineNo = cursorPos.lineNumber;
@@ -344,6 +379,7 @@ const CodeEditor = (props) => {
    /* editorRef.current.onDidChangeModelContent((e) => {
         getChangedLines(e);
     });*/
+
   return (
     <div className='h-max my-2 w-max overflow-scroll flex flex-row'>
         <ToastContainer />

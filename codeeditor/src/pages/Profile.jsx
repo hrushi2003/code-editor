@@ -11,6 +11,7 @@ export const Profile = () => {
     const [open,setOpen] = useState(false);
     const [spinning,setSpinning] = useState(false);
     const [loading,setLoading] = useState(false);
+    const [projects,setProjects] = useState([])
     const [profile, setProfile] = useState({
         username : {
             name : "Hrushikesh",
@@ -44,10 +45,34 @@ export const Profile = () => {
             'Authorization' : `Bearer ${token}`
         }
     });
+    const getProjects = async() => {
+            if(!token){
+                navigate('/login');
+            }
+            await apiCall.get('/getProjects').then((data) => {
+                console.log(data.data);
+                setProjects(data.data.projects);
+            }).catch((err) => {
+                console.log(err);
+                toast.error('error in fetching details',{
+                    position: "top-right",
+                    autoClose: 2000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme : "light"
+                });
+            });
+    }
+    useEffect(() => {
+        getProjects();
+    },[])
         const handleModal = async () => {
         setLoading(true);
-        if(oldPassword != profile.password.password){
-            toast.error("Old password is incorrect",{
+        if(oldPassword === "" || newPass === ""){
+            toast.error("Enter All Fields",{
                 position: "top-right",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -62,7 +87,7 @@ export const Profile = () => {
         }
         await apiCall.patch('/updatePass',{
             userId : user,
-            oldPassword : profile.password.password,
+            oldPassword : oldPassword,
             newPassword : newPass
 
         }).then((data) => {
@@ -91,18 +116,10 @@ export const Profile = () => {
         setLoading(false);
         setOpen(false);
     }
-    useEffect(() => {
+    const setUserProfile = async () => {
         setSpinning(true);
-        if(!token || token === ""){
-            return () => {
-                setProfile({});
-                sessionStorage.clear();
-                localStorage.clear();
-                navigate('/');
-            }
-        }
         console.log(token,user);
-        apiCall.get('/getUser',{
+        await apiCall.get('/getUser',{
             userId : user
         }).then((data) => {
             setProfile({
@@ -128,7 +145,8 @@ export const Profile = () => {
             });
         })
         setSpinning(false);
-    },[])
+    }
+
   return (
     <div className='w-[100%] h-[100%] flex flex-col justify-center items-center'>
         <ToastContainer />
@@ -140,36 +158,12 @@ export const Profile = () => {
             <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
                 <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>USERNAME : </h1>
                 <div className='w-[70%] my-auto items-center text-gray-400'>
-                    {!profile.username.isActive ?
                     <Input type='text' className='w-[100%] text-[16px] font-bold'
-                    variant= {profile.username.name ? "filled" : "outlined"}
-                    onChange={(e) => {
-                        setProfile(prev => ({...prev, username: {name : e.target.value}}))
-                    }}
-                    onFocus={() => {
-                        setProfile((prev) => {
-                            prev.username.isActive = !prev.username.isActive;
-                            return prev;
-                        })
-                    }}
+                    readOnly
+                    variant='filled'
                     value={profile.username.name?.toUpperCase()}
                     >
-                    </Input>
-                    : (
-                    <Input type='text' className='w-[100%] text-[16px] font-bold text-black'
-                    onBlur ={() => {
-                        setProfile((prev) => {
-                            prev.username.isActive = !prev.username.isActive;
-                            return prev;
-                        })
-                    }}
-                    onChange={(e) => {
-                        setProfile(prev => ({...prev, username: {name: e.target.value}}))
-                    }}
-                    value={profile.username.name?.toUpperCase()}
-                    >
-                    </Input>  
-                    )}
+                    </Input> 
                 </div>
             </div>
             <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
@@ -212,7 +206,7 @@ export const Profile = () => {
                 <div className='w-[55%] my-auto items-center text-gray-400'>
                     <Input className='w-[100%] text-[16px] font-bold'
                     type = "password"
-                    value={profile.password.password}
+                    value= {profile.password.password}
                     variant='filled'
                     readOnly
                     >
@@ -255,8 +249,10 @@ export const Profile = () => {
             <div className='w-[100%] h-[60%] bg-blue-400 p-2 flex flex-col rounded-lg mt-5 items-center'>
                 <h1 className='text-white text-[15px] font-bold mt-2'>YOUR PROJECTS</h1>
                 <div className='bg-white w-[98%] flex flex-col items-center gap-2 h-[90%] overflow-auto hide-scrollbar rounded-lg mt-2 p-2'>
-                    <div className='w-[100%] flex flex-row bg-green-50 p-2 h-[50px] rounded-lg items-center'>
-                        <h1 className='text-[15px] flex font-bold text-blue-400 my-auto'>Project1</h1>
+                    {projects.map((data) => {
+                        return (
+                        <div key={data._id} className='w-[100%] flex flex-row bg-green-50 p-2 h-[50px] rounded-lg items-center'>
+                        <h1 className='text-[15px] flex font-bold text-blue-400 my-auto'>{data.codeName}</h1>
                         <div className='flex ml-auto gap-2 items-center'>
                             <MdDelete
                              className='text-red-400 cursor-pointer'
@@ -267,6 +263,8 @@ export const Profile = () => {
                              ></MdEdit>
                         </div>
                     </div>
+                        )
+                    })}
                 </div>
             </div>
         </div>

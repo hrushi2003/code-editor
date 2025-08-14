@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import {DownOutlined,SettingOutlined} from '@ant-design/icons';
 import { Dropdown, Space } from 'antd';
-import { Color } from 'antd/es/color-picker';
 import { useNavigate } from 'react-router-dom';
 export const Menu = () => {
     const navigate = useNavigate();
@@ -32,6 +31,10 @@ export const Menu = () => {
             disabled : false,
         }
     ];
+    const [user,setUser] = useState({
+        name : "John Doe",
+        email : "johndoe@gmail.com"
+    })
     const handleClick = ({key}) => {
         console.log(key)
         navigate(key);

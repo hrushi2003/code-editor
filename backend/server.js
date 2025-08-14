@@ -251,20 +251,12 @@ app.post('/Projects/update',async (req,res) => {
     const codeDoc = await CodeSchema.findById(codeId);
     try{
         codeDoc.language = language;
-    changedCodePos.forEach(element => {
-        const lineNo = element.lineNumber - 1;
-        if(lineNo >= 0 && lineNo < codeDoc.code.length){
-            codeDoc.code[lineNo] = element.line;
-        }
-        else if(lineNo >= codeDoc.code.length){
-            for(let i = codeDoc.code.length - 1; i < lineNo; i++){
-                codeDoc.code.push("");
-            }
-            codeDoc.code.push(element.line);
-        }
-    });
-    await codeDoc.save();
-    return res.status(200).json({"message" : "Code updated successfully"});
+        changedCodePos.forEach(patch => {
+            const {startIndx,deleteCount,newLines} = patch;
+            codeDoc.code.splice(startIndx,deleteCount,...newLines);
+        });
+        await codeDoc.save();
+        return res.status(200).json({"message" : "Code updated successfully"});
     }
     catch(err){
         console.log(err);
