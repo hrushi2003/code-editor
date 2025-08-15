@@ -251,6 +251,9 @@ app.post('/Projects/update',async (req,res) => {
     const codeDoc = await CodeSchema.findById(codeId);
     try{
         codeDoc.language = language;
+        changedCodePos.sort((a,b) => {
+            return a.timeStamp - b.timeStamp;
+        });
         changedCodePos.forEach(patch => {
             const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
             var lineAtIndx = startIndx;
@@ -259,6 +262,10 @@ app.post('/Projects/update',async (req,res) => {
                 var newLine = line.substring(0,startColumn) + newLines.join("") +
                 line.substring(endColumn);
                 codeDoc.code[lineAtIndx] = newLine;
+            }
+            else if(startIndx < codeDoc.code.length && deleteCount > 1){
+                codeDoc.code.splice(startIndx,deleteCount);
+                codeDoc.code.splice(startIndx,0,newLines);
             }
             else{
                 codeDoc.code.splice(lineAtIndx,deleteCount,

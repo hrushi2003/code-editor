@@ -53,6 +53,8 @@ const CodeEditor = (props) => {
     const[languages,setLanguages] = useState([]);
     const [output,setOutput] = useState('');
     const [members,setMembers] = useState([]);
+    const [isTyping,setTyping] = useState(false);
+    const lastTypedRef = useRef(Date.now());
     const [contentLoaded,setContentLoaded] = useState(false);
     const editorRef = useRef(null);
     const monacoE = useRef(null);
@@ -143,7 +145,7 @@ const CodeEditor = (props) => {
                 });
               //  setPatched([]);
             setSaved(false);
-        },20000);
+        },5000);
         return () => clearInterval(updateCodeAtIntervals);
     },[contentLoaded])
     useEffect(() => {
@@ -192,6 +194,7 @@ const CodeEditor = (props) => {
             }
         });
         editor.onDidChangeModelContent((event) => {
+            setTyping(true);
             if(!didInit.current){
                 didInit.current = true;
                 return;
@@ -211,7 +214,8 @@ const CodeEditor = (props) => {
                         deleteCount,
                         startColumn,
                         endColumn,
-                        newLines
+                        newLines,
+                        timeStamp : new Date().getTime(), // for consistent updates
                     });
             }
         })
