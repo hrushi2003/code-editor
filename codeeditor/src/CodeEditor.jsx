@@ -110,7 +110,6 @@ const CodeEditor = (props) => {
             setSaved(true);
             const codeData = localStorage.getItem("codeId");
             /*const changedMap = Array.from(changesMapRef.current,([key,value]) => ({lineNumber : key, line : value}));
-            const currLan = languageRef.current;
             console.log(changedMap);
             try{
             if(changedMap.size != 0){
@@ -121,7 +120,7 @@ const CodeEditor = (props) => {
                     const lineNumber = data.lineNumber;
                     const currLine = reCheckedData[lineNumber - 1];
                     if(line != currLine){
-                        return currLine;
+                        return currLine; 
                     }
                     return line;
                 })
@@ -130,6 +129,7 @@ const CodeEditor = (props) => {
             catch(err){
                 console.log(err);      
             }*/
+            const currLan = languageRef.current;
            console.log(patched.current);
                await backendCall.post('/update',{
                     changedCodePos : patched.current,
@@ -197,18 +197,22 @@ const CodeEditor = (props) => {
                 return;
             }
             const changes = event.changes;
+            const model = editor.getModel();
             for (const change of changes) {
                 const {range, text} = change;
                 const {startLineNumber, startColumn, endLineNumber, endColumn} = range;
                 const startIndx = startLineNumber - 1;
                 const deleteCount = endLineNumber - startLineNumber + 1;
                 const newLines = text.split("\n");
-                console.log(startIndx,deleteCount,newLines);
-                patched.current.push({
-                    startIndx,
-                    deleteCount,
-                    newLines
-                });
+                const oldLine = model.getLineContent(startLineNumber);
+                    console.log(newLines)
+                    patched.current.push({
+                        startIndx,
+                        deleteCount,
+                        startColumn,
+                        endColumn,
+                        newLines
+                    });
             }
         })
         const codeData = localStorage.getItem("codeId");

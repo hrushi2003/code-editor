@@ -252,8 +252,18 @@ app.post('/Projects/update',async (req,res) => {
     try{
         codeDoc.language = language;
         changedCodePos.forEach(patch => {
-            const {startIndx,deleteCount,newLines} = patch;
-            codeDoc.code.splice(startIndx,deleteCount,...newLines);
+            const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
+            var lineAtIndx = startIndx;
+            if(lineAtIndx < codeDoc.code.length && deleteCount == 1){
+                var line = codeDoc.code[lineAtIndx];
+                var newLine = line.substring(0,startColumn) + newLines.join("") +
+                line.substring(endColumn);
+                codeDoc.code[lineAtIndx] = newLine;
+            }
+            else{
+                codeDoc.code.splice(lineAtIndx,deleteCount,
+                ...newLines);
+            }
         });
         await codeDoc.save();
         return res.status(200).json({"message" : "Code updated successfully"});
