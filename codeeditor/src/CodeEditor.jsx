@@ -55,6 +55,10 @@ const CodeEditor = (props) => {
     const [members,setMembers] = useState([]);
     const [isTyping,setTyping] = useState(false);
     const lastTypedRef = useRef(Date.now());
+    const [intervalTime,setIntervalTime] = useState(4000);
+    const keyStrokes = useRef([]);
+    const [speed,setSpeed] = useState(0);
+    const setIntervals = useRef(null);
     const [contentLoaded,setContentLoaded] = useState(false);
     const editorRef = useRef(null);
     const monacoE = useRef(null);
@@ -83,7 +87,20 @@ const CodeEditor = (props) => {
         };
         reader.readAsText(file);
     }
-
+    const updateCode = async () => {
+        const codeData = localStorage.getItem("codeId");
+        const currLan = languageRef.current;
+        await backendCall.post('/update',{
+                changedCodePos : patched.current,
+                codeId : codeData,
+                language : currLan
+            }).then((data) => {
+                    console.log(data);
+                    patched.current = [];
+            }).catch((err) => {
+                    console.log(err);
+        });
+    }
     useEffect(() => {
         getLan();
             socket.emit('authenticate',userId);
@@ -106,48 +123,26 @@ const CodeEditor = (props) => {
     useEffect(() => {
         languageRef.current = selectedLanguage;
     },[selectedLanguage]);
-   useEffect(() => {
-      const updateCodeAtIntervals = 
-        setInterval(async () => {
-            setSaved(true);
-            const codeData = localStorage.getItem("codeId");
-            /*const changedMap = Array.from(changesMapRef.current,([key,value]) => ({lineNumber : key, line : value}));
-            console.log(changedMap);
-            try{
-            if(changedMap.size != 0){
-                const model = editorRef.current;
-                const reCheckedData = model.getValue().split('\n');
-                changedMap.map((indx,data) => {
-                    const line = data.line;
-                    const lineNumber = data.lineNumber;
-                    const currLine = reCheckedData[lineNumber - 1];
-                    if(line != currLine){
-                        return currLine; 
-                    }
-                    return line;
-                })
+    useEffect(() => {
+        var setIntervalTime = 7000;
+        if(speed > 5) {
+            setIntervalTime = 2000;
+        }
+        else if(speed > 2) {
+            setIntervalTime = 5000;
+        }
+        console.log('the speed is ' + speed)
+        if(setIntervals.current) clearInterval(setIntervals.current);
+        setIntervals.current = setInterval(async () => {
+            console.log(setIntervalTime+ " ms is my current updation time");
+            if(patched.current.length > 0) {
+               await updateCode();
             }
-            }
-            catch(err){
-                console.log(err);      
-            }*/
-            const currLan = languageRef.current;
-           console.log(patched.current);
-               await backendCall.post('/update',{
-                    changedCodePos : patched.current,
-                    codeId : codeData,
-                    language : currLan
-                }).then((data) => {
-                    console.log(data);
-                    patched.current = [];
-                }).catch((err) => {
-                    console.log(err);
-                });
-              //  setPatched([]);
-            setSaved(false);
-        },5000);
-        return () => clearInterval(updateCodeAtIntervals);
-    },[contentLoaded])
+        },setIntervalTime);
+        return () => {
+            if(setIntervals.current) clearInterval(setIntervals.current);
+        }
+    },[lastTypedRef])
     useEffect(() => {
        // socket.emit('cursorChange',cursorPos);
         cursorRef.current = cursorPos;
@@ -155,6 +150,15 @@ const CodeEditor = (props) => {
         getLineContent();
     },[cursorPos]);
 
+    // To get the speed of typed characters
+    const getSpeed = (date) => {
+        keyStrokes.current.push(date);
+        keyStrokes.current = keyStrokes.current.filter((t) => date - t <= 5000);
+        const typedChars = keyStrokes.current.length;
+        const elapsedSec = (Math.max(1,date - keyStrokes.current[0])) / 1000;
+        const speed = (typedChars / elapsedSec)
+        setSpeed(speed);
+    }
     const handleEditorMount = async(editor,monaco) => {
        try{
         editorRef.current = editor;
@@ -166,7 +170,6 @@ const CodeEditor = (props) => {
             const lineNumber = position.lineNumber;
             const column = position.column;
             setcursorPos({lineNumber : lineNumber, column: column});
-            onCursorChangeUpdate(lineNumber,column);
         });
          }
        catch(err){
@@ -195,6 +198,8 @@ const CodeEditor = (props) => {
         });
         editor.onDidChangeModelContent((event) => {
             setTyping(true);
+            lastTypedRef.current = Date.now();
+            getSpeed(lastTypedRef.current);
             if(!didInit.current){
                 didInit.current = true;
                 return;
@@ -207,7 +212,6 @@ const CodeEditor = (props) => {
                 const startIndx = startLineNumber - 1;
                 const deleteCount = endLineNumber - startLineNumber + 1;
                 const newLines = text.split("\n");
-                const oldLine = model.getLineContent(startLineNumber);
                     console.log(newLines)
                     patched.current.push({
                         startIndx,
@@ -248,9 +252,6 @@ const CodeEditor = (props) => {
                 })
             });
         }
-    }
-    const onCursorChangeUpdate = () => {
-        // some code
     }
     const handleLanguageChange = (e) => {
         setSelectedLanguage(e.target.value);

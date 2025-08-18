@@ -265,7 +265,7 @@ app.post('/Projects/update',async (req,res) => {
             }
             else if(startIndx < codeDoc.code.length && deleteCount > 1){
                 codeDoc.code.splice(startIndx,deleteCount);
-                codeDoc.code.splice(startIndx,0,newLines);
+                codeDoc.code.splice(startIndx,0,...newLines);
             }
             else{
                 codeDoc.code.splice(lineAtIndx,deleteCount,

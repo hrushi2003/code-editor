@@ -52,3 +52,24 @@ export const Menu = () => {
     </div>
   )
 }
+
+  /*const changedMap = Array.from(changesMapRef.current,([key,value]) => ({lineNumber : key, line : value}));
+            console.log(changedMap);
+            try{
+            if(changedMap.size != 0){
+                const model = editorRef.current;
+                const reCheckedData = model.getValue().split('\n');
+                changedMap.map((indx,data) => {
+                    const line = data.line;
+                    const lineNumber = data.lineNumber;
+                    const currLine = reCheckedData[lineNumber - 1];
+                    if(line != currLine){
+                        return currLine; 
+                    }
+                    return line;
+                })
+            }
+            }
+            catch(err){
+                console.log(err);      
+}*/

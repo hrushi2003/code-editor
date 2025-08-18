@@ -47,7 +47,7 @@ const Login = () => {
                     navigate('/Projects');
             }).catch((err) => {
                     console.log(err)
-                    toast.error(err.response.data.message,{
+                    toast.error(err?.response?.data?.message,{
                         position: "top-right",
                         autoClose: 3000,
                         hideProgressBar: false,
