@@ -266,6 +266,13 @@ app.post('/Projects/update',async (req,res) => {
     try{
         changedCodePos.forEach(patch => {
             const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
+            if(!startIndx || !deleteCount || !newLines || !startColumn || !endColumn){
+                err.message = "Invalid patch data";
+                res.status(404).json({
+                    message : "Invalid patch data",
+                    error : err
+                })
+            }
             if(lineAtIndx < codeDoc.code.length && deleteCount == 1){
                 var line = codeDoc.code[startIndx];
                 var newLine = line.substring(0,startColumn) + newLines.join("") +
