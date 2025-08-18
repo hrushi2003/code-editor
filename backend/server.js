@@ -268,9 +268,11 @@ app.post('/Projects/update',async (req,res) => {
             const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
             if((startIndx >= 0 && startIndx < codeDoc.code.length) && deleteCount == 1){
                 var line = codeDoc.code[startIndx];
-                if(!line){
-                    err.message = "missing Line";
+                if (line == null) {
+                    err.message = "Line is null";
+                    err.indx = startIndx;
                 }
+
                 var newLine = line.substring(0,startColumn) + newLines.join("") +
                 line.substring(endColumn);
                 codeDoc.code[startIndx] = newLine;
