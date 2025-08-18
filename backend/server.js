@@ -266,19 +266,18 @@ app.post('/Projects/update',async (req,res) => {
     try{
         changedCodePos.forEach(patch => {
             const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
-            var lineAtIndx = startIndx;
-            if(!lineAtIndx || lineAtIndx == null){
-                err.message = "lineAtIndx is null";
-                res.status(500).json(err);
+            if(!startIndx || startIndx == null){
+                err.message = "Start index is null";
+                res.status(400).json(err);
             }
             if(lineAtIndx < codeDoc.code.length && deleteCount == 1){
-                var line = codeDoc.code[lineAtIndx];
+                var line = codeDoc.code[startIndx];
                 if(!line || line == null){
                     res.status(404).json({message : "Line not found"});
                 }
                 var newLine = line.substring(0,startColumn) + newLines.join("") +
                 line.substring(endColumn);
-                codeDoc.code[lineAtIndx] = newLine;
+                codeDoc.code[startIndx] = newLine;
             }
             else{
                 codeDoc.code.splice(startIndx,deleteCount,
