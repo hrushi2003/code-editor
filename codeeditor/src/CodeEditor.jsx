@@ -206,7 +206,6 @@ const CodeEditor = (props) => {
                 return;
             }
             const changes = event.changes;
-            const model = editor.getModel();
             for (const change of changes) {
                 const {range, text} = change;
                 const {startLineNumber, startColumn, endLineNumber, endColumn} = range;

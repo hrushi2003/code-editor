@@ -270,7 +270,8 @@ app.post('/Projects/update',async (req,res) => {
                 err.message = "Invalid patch data";
                 res.status(404).json({
                     message : "Invalid patch data",
-                    error : err
+                    error : err,
+                    patch
                 })
             }
             if(startIndx < codeDoc.code.length && deleteCount == 1){
