@@ -277,7 +277,14 @@ app.post('/Projects/update',async (req,res) => {
                 ...newLines);
             }
         });
-        await codeDoc.save();
+        await codeDoc.save((err) => {
+            if(err){
+                console.log(err);
+                res.status(500).json({
+                    "message" : "Error in updating code"
+                })
+            }
+        });
         return res.status(200).json({"message" : "Code updated successfully"});
     }
     catch(err){
