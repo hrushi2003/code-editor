@@ -88,6 +88,7 @@ const CodeEditor = (props) => {
         reader.readAsText(file);
     }
     const updateCode = async () => {
+        console.log(patched.current)
         const codeData = localStorage.getItem("codeId");
         const currLan = languageRef.current;
         await backendCall.post('/update',{
