@@ -273,7 +273,7 @@ app.post('/Projects/update',async (req,res) => {
                 codeDoc.code[lineAtIndx] = newLine;
             }
             else{
-                codeDoc.code.splice(lineAtIndx,deleteCount,
+                codeDoc.code.splice(startIndx,deleteCount,
                 ...newLines);
             }
         });
@@ -289,7 +289,9 @@ app.post('/Projects/update',async (req,res) => {
     }
     catch(err){
         console.log(err);
-        return res.status(500).json({"message" : "error in saving code"});
+        return res.status(500).json({"message" : "error in saving code",
+            "data" : changedCodePos
+        });
     }
 });
 server.listen(3000,() => {

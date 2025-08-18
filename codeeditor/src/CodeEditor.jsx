@@ -137,7 +137,7 @@ const CodeEditor = (props) => {
         setIntervals.current = setInterval(async () => {
             console.log(setIntervalTime+ " ms is my current updation time");
             if(patched.current.length > 0) {
-               await updateCode();
+               updateCode();
             }
         },setIntervalTime);
         return () => {
