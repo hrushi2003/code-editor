@@ -265,9 +265,6 @@ app.post('/Projects/update',async (req,res) => {
     try{
         changedCodePos.forEach(patch => {
             const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
-            if(!Array.isArray(newLines)){
-                newLines = [newLines];
-            }
             var lineAtIndx = startIndx;
             if(lineAtIndx < codeDoc.code.length && deleteCount == 1){
                 var line = codeDoc.code[lineAtIndx];
