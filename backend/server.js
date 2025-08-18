@@ -251,7 +251,7 @@ app.post('/Projects/update',async (req,res) => {
     const codeDoc = await CodeSchema.findById(codeId);
     const err = {}
     if(!codeDoc || !codeDoc.code){
-        return res.status(404).json({message : "Code not found"});
+        res.status(404).json({message : "Code not found"});
     }
     try{
         codeDoc.language = language;
