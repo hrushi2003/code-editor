@@ -249,7 +249,8 @@ app.get('/Projects/getCode',async (req,res) => {
 app.post('/Projects/update',async (req,res) => {
     const {changedCodePos,codeId,language} = req.body;
     const codeDoc = await CodeSchema.findById(codeId);
-    if(!codeDoc){
+    const err = {}
+    if(!codeDoc || !codeDoc.code){
         return res.status(404).json({message : "Code not found"});
     }
     try{
@@ -266,8 +267,15 @@ app.post('/Projects/update',async (req,res) => {
         changedCodePos.forEach(patch => {
             const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
             var lineAtIndx = startIndx;
+            if(!lineAtIndx || lineAtIndx == null){
+                err.message = "lineAtIndx is null";
+                return res.status(500).json(err);
+            }
             if(lineAtIndx < codeDoc.code.length && deleteCount == 1){
                 var line = codeDoc.code[lineAtIndx];
+                if(!line || line == null){
+                    return res.status(404).json({message : "Line not found"});
+                }
                 var newLine = line.substring(0,startColumn) + newLines.join("") +
                 line.substring(endColumn);
                 codeDoc.code[lineAtIndx] = newLine;
