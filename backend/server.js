@@ -263,10 +263,6 @@ app.post('/Projects/update',async (req,res) => {
                 line.substring(endColumn);
                 codeDoc.code[lineAtIndx] = newLine;
             }
-            else if(startIndx < codeDoc.code.length && deleteCount > 1){
-                codeDoc.code.splice(startIndx,deleteCount);
-                codeDoc.code.splice(startIndx,0,...newLines);
-            }
             else{
                 codeDoc.code.splice(lineAtIndx,deleteCount,
                 ...newLines);
@@ -277,7 +273,7 @@ app.post('/Projects/update',async (req,res) => {
     }
     catch(err){
         console.log(err);
-        return res.status(500).send(err);
+        return res.status(500).json({err});
     }
 });
 server.listen(3000,() => {
