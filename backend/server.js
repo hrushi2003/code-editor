@@ -251,7 +251,7 @@ app.post('/Projects/update',async (req,res) => {
     const codeDoc = await CodeSchema.findById(codeId);
     const err = {}
     if(!codeDoc || !codeDoc.code){
-        res.status(404).json({message : "Code not found"});
+        err.message = "code Not Found";
     }
     try{
         codeDoc.language = language;
@@ -259,9 +259,10 @@ app.post('/Projects/update',async (req,res) => {
             return a.timeStamp - b.timeStamp;
         });
     }
-    catch(err){
-        console.log(err);
-        res.status(500).json({"message" : "error in sorting"})
+    catch(error){
+       // res.status(500).json({"message" : "error in sorting"})
+       err.message = "error in sorting";
+       console.log(err);
     }
     try{
         changedCodePos.forEach(patch => {
@@ -269,7 +270,8 @@ app.post('/Projects/update',async (req,res) => {
             if((startIndx >= 0 && startIndx < codeDoc.code.length) && deleteCount == 1){
                 var line = codeDoc.code[startIndx];
                 if (line == null) {
-                    codeDoc.code[startIndx] = newLines.join("");
+                    codeDoc.code.splice(startIndx, 0, ...newLines);
+                    err.line = codeDoc.code[startIndx]
                 }
                 else{
                     var newLine = line.substring(0,startColumn) + newLines.join("") +
@@ -281,19 +283,11 @@ app.post('/Projects/update',async (req,res) => {
                 codeDoc.code.splice(startIndx,deleteCount,
                 ...newLines);
             }
-        });
-        await codeDoc.save((err) => {
-            if(err){
-                console.log(err);
-                res.status(500).json({
-                    "message" : "Error in updating code"
-                })
-            }
-        });
+        })
+        await codeDoc.save();
         return res.status(200).json({"message" : "Code updated successfully"});
     }
     catch(error){
-        console.log(err);
         return res.status(500).json({"message" : "error in saving code",
             "data" : changedCodePos,
             err
