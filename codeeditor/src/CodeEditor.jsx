@@ -143,7 +143,7 @@ const CodeEditor = (props) => {
         return () => {
             if(setIntervals.current) clearInterval(setIntervals.current);
         }
-    },[lastTypedRef])
+    },[lastTypedRef.current])
     useEffect(() => {
        // socket.emit('cursorChange',cursorPos);
         cursorRef.current = cursorPos;

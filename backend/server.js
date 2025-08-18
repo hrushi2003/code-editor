@@ -257,6 +257,12 @@ app.post('/Projects/update',async (req,res) => {
         changedCodePos.sort((a,b) => {
             return a.timeStamp - b.timeStamp;
         });
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).json({"message" : "error in sorting"})
+    }
+    try{
         changedCodePos.forEach(patch => {
             const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
             if(!Array.isArray(newLines)){
@@ -279,7 +285,7 @@ app.post('/Projects/update',async (req,res) => {
     }
     catch(err){
         console.log(err);
-        return res.status(500).json({err});
+        return res.status(500).json({"message" : "error in saving code"});
     }
 });
 server.listen(3000,() => {
