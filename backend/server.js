@@ -269,13 +269,13 @@ app.post('/Projects/update',async (req,res) => {
             if((startIndx >= 0 && startIndx < codeDoc.code.length) && deleteCount == 1){
                 var line = codeDoc.code[startIndx];
                 if (line == null) {
-                    err.message = "Line is null";
-                    err.indx = startIndx;
+                    codeDoc.code[startIndx] = newLines.join("");
                 }
-
-                var newLine = line.substring(0,startColumn) + newLines.join("") +
-                line.substring(endColumn);
-                codeDoc.code[startIndx] = newLine;
+                else{
+                    var newLine = line.substring(0,startColumn) + newLines.join("") +
+                    line.substring(endColumn);
+                    codeDoc.code[startIndx] = newLine;
+                }
             }
             else{
                 codeDoc.code.splice(startIndx,deleteCount,
