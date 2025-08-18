@@ -273,7 +273,7 @@ app.post('/Projects/update',async (req,res) => {
                     error : err
                 })
             }
-            if(lineAtIndx < codeDoc.code.length && deleteCount == 1){
+            if(startIndx < codeDoc.code.length && deleteCount == 1){
                 var line = codeDoc.code[startIndx];
                 var newLine = line.substring(0,startColumn) + newLines.join("") +
                 line.substring(endColumn);
