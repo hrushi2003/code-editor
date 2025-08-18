@@ -291,10 +291,11 @@ app.post('/Projects/update',async (req,res) => {
         });
         return res.status(200).json({"message" : "Code updated successfully"});
     }
-    catch(err){
+    catch(error){
         console.log(err);
         return res.status(500).json({"message" : "error in saving code",
-            "data" : changedCodePos
+            "data" : changedCodePos,
+            err
         });
     }
 });
