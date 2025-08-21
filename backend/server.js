@@ -2,7 +2,7 @@ import bodyParser from "body-parser";
 import express from "express";
 import { Server } from "socket.io";
 import { createServer } from "http";
-import {connect} from "./connect.js";
+import { connect } from "./connect.js";
 import { User } from "./models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -16,37 +16,37 @@ app.use(express.json());
 
 const users = {};
 const server = createServer(app);
-const io = new Server(server,{
-    path : '/socket',
-    wssEngine : ['ws','wss'],
-    transports : ['websocket','polling'],
-    cors : {
-        origin : "*",
-        credentials:true,            
-        optionSuccessStatus:200
-  },
-  connectionStateRecovery: {}
+const io = new Server(server, {
+    path: '/socket',
+    wssEngine: ['ws', 'wss'],
+    transports: ['websocket', 'polling'],
+    cors: {
+        origin: "*",
+        credentials: true,
+        optionSuccessStatus: 200
+    },
+    connectionStateRecovery: {}
 });
 app.use(cors());
 connect();
 io.on("connection", socket => {
     console.log("Client connected");
-    socket.on("cursorChange",(data,callback) => {
+    socket.on("cursorChange", (data, callback) => {
         console.log(data);
         callback();
     });
-    socket.on("authenticate", (userId,callback) => {
-       socket.userId = userId;
+    socket.on("authenticate", (userId, callback) => {
+        socket.userId = userId;
         users[userId] = socket.id;
         callback();
     });
-    socket.on("changeData",(data,callback) => {
-        const {line,position,member} = data;
+    socket.on("changeData", (data, callback) => {
+        const { line, position, member } = data;
         if (line == null || position == null) {
             callback();
             return;
         }
-       if(users[member]) socket.to(users[member]).emit("updateCursorAndData",{line,position});
+        if (users[member]) socket.to(users[member]).emit("updateCursorAndData", { line, position });
         callback();
     });
     socket.on("disconnect", () => {
@@ -57,123 +57,123 @@ io.on("connection", socket => {
 
 const createToken = (id) => {
     const token = jwt.sign({ id }, process.env.SECRET_KEY
-        ,{ expiresIn: '1d' }); // 1 d
-    return token;  
+        , { expiresIn: '1d' }); // 1 d
+    return token;
 }
 
-app.post('/login',(req,res) => {
-    const {username,password} = req.body;
-    User.findOne({username : username}).then((user) => {
-        if(!user) {
-            res.status(404).json({message : "User not found"});
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    User.findOne({ username: username }).then((user) => {
+        if (!user) {
+            res.status(404).json({ message: "User not found" });
             return;
         }
-        bcrypt.compare(password,user.password).then((valid) => {
-            if(!valid) {
-                res.status(401).json({message : "Invalid password"});
+        bcrypt.compare(password, user.password).then((valid) => {
+            if (!valid) {
+                res.status(401).json({ message: "Invalid password" });
                 return;
             }
             const token = createToken(user._id);
             console.log(user);
-            res.status(200).json({"token":token,"user_id" : user._id});
+            res.status(200).json({ "token": token, "user_id": user._id });
             return;
         }).catch((err) => {
-            res.status(500).json({message : "Error"});
+            res.status(500).json({ message: "Error" });
             return;
         })
     }).catch((err) => {
         console.log(err);
-        res.status(500).json({message : "Error"});
+        res.status(500).json({ message: "Error" });
         return;
     });
 })
-app.post('/register',async (req,res) => {
-    const {username,email,password} = req.body;
+app.post('/register', async (req, res) => {
+    const { username, email, password } = req.body;
     console.log(password);
-    const isNewUser = await User.findOne({username : username});
-    if(isNewUser){
+    const isNewUser = await User.findOne({ username: username });
+    if (isNewUser) {
         return res.status(409).send('Username already in use');
     }
-    bcrypt.hash(password,10).then((hash) => {
-        const newUser  = new User({
-            username : username,
-            email : email,
-            password : hash
+    bcrypt.hash(password, 10).then((hash) => {
+        const newUser = new User({
+            username: username,
+            email: email,
+            password: hash
         })
         newUser.save().then((data) => {
-            console.log("saved succesfully",data);
+            console.log("saved succesfully", data);
             const token = createToken(data._id);
-           return res.json({"token" : token,"success":true,"user_id" : data._id});
+            return res.json({ "token": token, "success": true, "user_id": data._id });
         }).catch((err) => {
-           return res.status(400).send("duplication found",err);
-        })    
+            return res.status(400).send("duplication found", err);
+        })
     }).catch((err) => {
         return res.status(500).send(err);
     })
 });
-app.get('/getUser', async (req,res) => {
+app.get('/getUser', async (req, res) => {
     const tokenId = req.headers["authorization"].split(" ")[1];
-    if(!tokenId) {
-        return res.status(401).json({message : "Unauthorized"});
+    if (!tokenId) {
+        return res.status(401).json({ message: "Unauthorized" });
     }
     const user_id = jwt.decode(tokenId);
-    if(!user_id){
-        return res.status(404).json({message : "User is not logged in"});
+    if (!user_id) {
+        return res.status(404).json({ message: "User is not logged in" });
     }
     const user = await User.findById(user_id.id);
-    if(!user){
-        return res.status(404).json({message : user, userId });
+    if (!user) {
+        return res.status(404).json({ message: user, userId });
     }
     return res.status(200).json({
-        "username" : user.username,
-        "email" : user.email
+        "username": user.username,
+        "email": user.email
     })
 });
 
-app.patch('/updatePass',async (req,res) => {
-    const {userId,oldPassword,newPassword} = req.body;
+app.patch('/updatePass', async (req, res) => {
+    const { userId, oldPassword, newPassword } = req.body;
     const user = await User.findById(userId);
-    const isValidPassword = await bcrypt.compare(oldPassword,user.password);
-    if(!isValidPassword){
-        return res.status(401).json({message : "Invalid password"});
+    const isValidPassword = await bcrypt.compare(oldPassword, user.password);
+    if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid password" });
     }
-    await bcrypt.hash(newPassword,10).then((hash) => {
+    await bcrypt.hash(newPassword, 10).then((hash) => {
         user.password = hash;
         user.save().then((data) => {
-            return res.json({"success":true,"message" : "Password updated succesfully"});
+            return res.json({ "success": true, "message": "Password updated succesfully" });
         }).catch((err) => {
-            return res.status(400).send("Error updating password",err);
+            return res.status(400).send("Error updating password", err);
         })
     }).catch((err) => {
         return res.status(500).send(err);
     })
 });
-app.post('/createProject',async (req,res) => {
-    const {projectName,membersId} = req.body;
+app.post('/createProject', async (req, res) => {
+    const { projectName, membersId } = req.body;
     const tokenId = req.headers["authorization"].split(" ")[1];
-    if(!tokenId) {
-        return res.status(401).json({message : "Unauthorized"});
+    if (!tokenId) {
+        return res.status(401).json({ message: "Unauthorized" });
     }
     const user_id = jwt.decode(tokenId);
-    if(!user_id){
-        return res.status(404).json({message : "User is not logged in"});
+    if (!user_id) {
+        return res.status(404).json({ message: "User is not logged in" });
     }
     const user = await User.findById(user_id.id);
-    if(!user){
-        return res.status(404).json({message : "User is not found"});
+    if (!user) {
+        return res.status(404).json({ message: "User is not found" });
     }
     membersId.push(user._id);
     const Code = new CodeSchema({
-        codeName : projectName,
-        users : membersId.map(id => ({userId : id})),
-        leader : user._id,
-        code : [
+        codeName: projectName,
+        users: membersId.map(id => ({ userId: id })),
+        leader: user._id,
+        code: [
             "// DO AWESOME THINGS"
         ]
     });
     Code.save().then((data) => {
         console.log(data);
-        return res.json({message : "Project created successfully","code_id" : data._id});
+        return res.json({ message: "Project created successfully", "code_id": data._id });
     }
     ).catch((err) => {
         console.log(err);
@@ -181,119 +181,128 @@ app.post('/createProject',async (req,res) => {
     });
 
 });
-app.get('/getProjects',async(req,res) => {
+app.get('/getProjects', async (req, res) => {
     const tokenId = req.headers["authorization"].split(" ")[1];
-    if(!tokenId) {
-        return res.status(401).json({message : "Unauthorized"});
+    if (!tokenId) {
+        return res.status(401).json({ message: "Unauthorized" });
     }
     const user_id = jwt.decode(tokenId);
-    if(!user_id){
-        return res.status(404).json({message : "User is not logged in"});
+    if (!user_id) {
+        return res.status(404).json({ message: "User is not logged in" });
     }
     const user = await User.findById(user_id.id);
-    if(!user){
-        return res.status(404).json({message : "User not found"});
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
     }
-    try{
-    const projects = await CodeSchema.find({users : {$elemMatch : {userId : user._id }}}).select([
-        "codeName",
-        "users",
-        "leader"
-    ]).populate({path : 'users.userId', select : 'username'}).exec();
-    return res.status(200).json({"projects" : projects});
+    try {
+        const projects = await CodeSchema.find({ users: { $elemMatch: { userId: user._id } } }).select([
+            "codeName",
+            "users",
+            "leader"
+        ]).populate({ path: 'users.userId', select: 'username' }).exec();
+        return res.status(200).json({ "projects": projects });
     }
-    catch(err){
-        console.log(err);
-        return res.status(500).send(err);
-    }  
-})
-app.get('/getMembers',async(req,res) => {
-    const tokenId = req.headers["authorization"].split(" ")[1];
-    if(!tokenId) {
-        return res.status(401).json({message : "Unauthorized"});
-    }
-    const user_id = jwt.decode(tokenId);
-    if(!user_id){
-        return res.status(404).json({message : "User is not logged in"});
-    }
-    const user = await User.findById(user_id.id);
-    if(!user){
-        return res.status(404).json({message : "User not found"});
-    }
-    try{
-        const members = await User.find({username : {$ne : user.username}}).select(["username"]).exec();
-        return res.status(200).json({"members" : members});
-    }
-    catch(err){
+    catch (err) {
         console.log(err);
         return res.status(500).send(err);
     }
 })
-app.get('/Projects/getCode',async (req,res) => {
+app.get('/getMembers', async (req, res) => {
+    const tokenId = req.headers["authorization"].split(" ")[1];
+    if (!tokenId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    const user_id = jwt.decode(tokenId);
+    if (!user_id) {
+        return res.status(404).json({ message: "User is not logged in" });
+    }
+    const user = await User.findById(user_id.id);
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+    try {
+        const members = await User.find({ username: { $ne: user.username } }).select(["username"]).exec();
+        return res.status(200).json({ "members": members });
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).send(err);
+    }
+})
+app.get('/Projects/getCode', async (req, res) => {
     const codeId = req.query.codeId;
-    if(!codeId){
-        return res.status(404).json({message : "The provided code id is null"});
+    if (!codeId) {
+        return res.status(404).json({ message: "The provided code id is null" });
     }
-    try{
+    try {
         const code = await CodeSchema.findById(codeId);
-        if(!code){
-            return res.status(404).json({message : "Code not found"});
+        if (!code) {
+            return res.status(404).json({ message: "Code not found" });
         }
-        return res.status(200).json({"code" : code});
+        return res.status(200).json({ "code": code });
     }
-    catch(err){
+    catch (err) {
         console.log(err);
         return res.status(500).send(err);
     }
 });
-app.post('/Projects/update',async (req,res) => {
-    const {changedCodePos,codeId,language} = req.body;
+app.post('/Projects/update', async (req, res) => {
+    const { changedCodePos, codeId, language } = req.body;
     const codeDoc = await CodeSchema.findById(codeId);
     const err = {}
-    if(!codeDoc || !codeDoc.code){
+    if (!codeDoc || !codeDoc.code) {
         err.message = "code Not Found";
     }
-    try{
+    try {
         codeDoc.language = language;
-        changedCodePos.sort((a,b) => {
+        changedCodePos.sort((a, b) => {
             return a.timeStamp - b.timeStamp;
         });
     }
-    catch(error){
-       // res.status(500).json({"message" : "error in sorting"})
-       err.message = "error in sorting";
-       console.log(err);
+    catch (error) {
+        // res.status(500).json({"message" : "error in sorting"})
+        err.message = "error in sorting";
+        console.log(err);
     }
-    try{
+    try {
         changedCodePos.forEach(patch => {
-            const {startIndx,deleteCount,newLines,startColumn,endColumn} = patch;
-            if((startIndx >= 0 && startIndx < codeDoc.code.length) && deleteCount == 1){
+            const { startIndx, deleteCount, newLines, startColumn, endColumn } = patch;
+            if ((startIndx >= 0 && startIndx < codeDoc.code.length) && newLines.length == 1) {
                 var line = codeDoc.code[startIndx];
                 if (line == null) {
                     codeDoc.code.splice(startIndx, 0, ...newLines);
                     err.line = codeDoc.code[startIndx]
                 }
-                else{
-                    var newLine = line.substring(0,startColumn) + newLines.join("") +
-                    line.substring(endColumn);
+                else {
+                    var newLine = line.substring(0, startColumn) + newLines.join("") +
+                        line.substring(endColumn);
                     codeDoc.code[startIndx] = newLine;
                 }
             }
-            else{
-                codeDoc.code.splice(startIndx,deleteCount,
-                ...newLines);
+            else {
+                newLines = newLines.join("").split('\r');
+                const lineAtStart = codeDoc.code[startIndx];
+                const BeforeLine  = lineAtStart.substring(0,startColumn);
+                codeDoc.code[startIndx] = BeforeLine;
+                newLines.shift();
+                if(startIndx + 1 > codeDoc.code.length){
+                   for(let i = 0; i < deleteCount; i++) codeDoc.code.push('');
+                }
+                codeDoc.code.splice(startIndx + 1,deleteCount,...newLines);
+                codeDoc.code[deleteCount] = codeDoc.code[deleteCount] + lineAtStart.substring(startColumn + 1);
             }
         })
         await codeDoc.save();
-        return res.status(200).json({"message" : "Code updated successfully"});
+        return res.status(200).json({ "message": "Code updated successfully" });
     }
-    catch(error){
-        return res.status(500).json({"message" : "error in saving code",
-            "data" : changedCodePos,
+    catch (error) {
+        return res.status(500).json({
+            "message": "error in saving code",
+            "data": changedCodePos,
             err
         });
     }
 });
-server.listen(3000,() => {
+server.listen(3000, () => {
     console.log("Server is running on port 3000");
 })
