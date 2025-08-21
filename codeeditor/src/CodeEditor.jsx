@@ -216,8 +216,8 @@ const CodeEditor = (props) => {
                     patched.current.push({
                         startIndx,
                         deleteCount,
-                        startColumn,
-                        endColumn,
+                        startColumn : startColumn - 1,
+                        endColumn : endColumn - 1,
                         newLines,
                         timeStamp : new Date().getTime(), // for consistent updates
                     });
