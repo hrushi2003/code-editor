@@ -267,32 +267,32 @@ app.post('/Projects/update', async (req, res) => {
     try {
         changedCodePos.forEach(patch => {
             const { startIndx, deleteCount, newLines, startColumn, endColumn } = patch;
-            if ((startIndx >= 0 && startIndx < code.length) && newLines.length == 1) {
-                var line = code[startIndx];
+            if ((startIndx >= 0 && startIndx < codeDoc.code.length) && newLines.length == 1) {
+                var line = codeDoc.code[startIndx];
                 if (line == null) {
-                    code.splice(startIndx, 0, ...newLines);
+                    codeDoc.code.splice(startIndx, 0, ...newLines);
                 }
                 else {
                     var newLine = line.substring(0, startColumn) + newLines.join("") +
                         line.substring(endColumn);
-                    code[startIndx] = newLine;
+                    codeDoc.code[startIndx] = newLine;
                 }
             }
             else {
                 let newLinesR = newLines.join("").includes('\r') ? newLines.join("").split('\r') : newLines;
-                while (code.length - 1 < startIndx) {
-                    code.push('');
+                while (codeDoc.code.length - 1 < startIndx) {
+                    codeDoc.code.push('');
                 }
-                const lineAtStart = code[startIndx];
+                const lineAtStart = codeDoc.code[startIndx];
                 const BeforeLine = lineAtStart.substring(0, startColumn + 1);
-                code[startIndx] = BeforeLine + newLines[0].replace('\r', "");
-                if (startIndx + 1 > code.length - 1) {
-                    for (let i = 0; i < deleteCount; i++) code.push('');
+                codeDoc.code[startIndx] = BeforeLine + newLines[0].replace('\r', "");
+                if (startIndx + 1 > codeDoc.code.length - 1) {
+                    for (let i = 0; i < deleteCount; i++) codeDoc.code.push('');
                 }
                 for (let i = 1; i < deleteCount; i++) {
-                    code.splice(startIndx + i, 1, newLinesR[i]);
+                    codeDoc.code.splice(startIndx + i, 1, newLinesR[i]);
                 }
-                code[deleteCount] = newLinesR[deleteCount] + lineAtStart.substring(startColumn + 1) + code[deleteCount];
+                codeDoc.code[deleteCount] = newLinesR[deleteCount] + lineAtStart.substring(startColumn + 1) + codeDoc.code[deleteCount];
             }
         });
         await codeDoc.save();
