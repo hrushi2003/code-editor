@@ -280,19 +280,19 @@ app.post('/Projects/update', async (req, res) => {
             }
             else {
                 let newLinesR = newLines.join("").includes('\r') ? newLines.join("").split('\r') : newLines;
-                while (codeDoc.code.length - 1 < startIndx) {
+                while (startIndx > codeDoc.code.length - 1) {
                     codeDoc.code.push('');
                 }
                 const lineAtStart = codeDoc.code[startIndx];
-                const BeforeLine = lineAtStart.substring(0, startColumn + 1);
-                codeDoc.code[startIndx] = BeforeLine + newLines[0].replace('\r', "");
-                if (startIndx + 1 > codeDoc.code.length - 1) {
-                    for (let i = 0; i < deleteCount; i++) codeDoc.code.push('');
+                const BeforeLine = lineAtStart.substring(0, startColumn);
+                codeDoc.code[startIndx] = BeforeLine + newLinesR[0];
+                if (newLinesR.length > 1 && startIndx + 1 > code.length - 1) {
+                    for (let i = 0; i < newLinesR.length; i++) codeDoc.code.push('');
                 }
-                for (let i = 1; i < deleteCount; i++) {
+                for (let i = 1; i <  newLinesR.length - 1; i++) {
                     codeDoc.code.splice(startIndx + i, 1, newLinesR[i]);
                 }
-                codeDoc.code[deleteCount] = newLinesR[deleteCount] + lineAtStart.substring(startColumn + 1) + codeDoc.code[deleteCount];
+                codeDoc.code[startIndx + newLinesR.length - 1] = newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn) + codeDoc.code[startIndx + newLinesR.length - 1];
             }
         });
         await codeDoc.save();
