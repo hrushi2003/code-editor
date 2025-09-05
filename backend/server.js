@@ -267,7 +267,7 @@ app.post('/Projects/update', async (req, res) => {
     try {
         changedCodePos.forEach(patch => {
             const { startIndx, deleteCount, endIndx = startIndx, newLines, startColumn, endColumn } = patch;
-            if ((startIndx >= 0 && startIndx < codeDoc.code.length) && newLines.length == 1) {
+            if ((startIndx >= 0 && startIndx < codeDoc.code.length) &&  (newLines.length == 1 && endIndx - startIndx == 0)) {
                 var line = codeDoc.code[startIndx];
                 if (line == null) {
                     codeDoc.code.splice(startIndx, 0, ...newLines);
