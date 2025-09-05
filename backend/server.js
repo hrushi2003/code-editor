@@ -279,9 +279,9 @@ app.post('/Projects/update', async (req, res) => {
                 }
             }
             else if (endIndx - startIndx > 0 && (deleteCount > 1 && newLines.length == 1)) {
-                let codeAtPos = code[endIndx];
-                code.splice(endIndx, 1);
-                code[startIndx] += codeAtPos;
+                let codeAtPos = codeDoc.code[endIndx];
+                codeDoc.code.splice(endIndx, 1);
+                codeDoc.code[startIndx] += codeAtPos;
             }
             else {
                 let newLinesR = newLines.join("").includes('\r') ? newLines.join("").split('\r') : newLines;
