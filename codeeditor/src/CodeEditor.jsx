@@ -205,7 +205,7 @@ const CodeEditor = (props) => {
                     if (selection.positionLineNumber > selection.startLineNumber) {
                         patched.current.push({
                             startIndx: selection.
-                                selectionStartLineNumber - 1,
+                                        selectionStartLineNumber - 1,
                             deleteCount: 1,
                             startColumn: selection.startColumn - 1,
                             endColumn: model.getLineContent(selection.startLineNumber).length,
@@ -276,8 +276,9 @@ const CodeEditor = (props) => {
                 patched.current.push({
                     startIndx,
                     deleteCount,
+                    endIndx : endLineNumber - 1,
                     startColumn: startColumn - 1,
-                    endColumn: endColumn - 1,
+                    endColumn: endColumn,
                     newLines,
                     timeStamp: new Date().getTime(), // for consistent updates
                 });

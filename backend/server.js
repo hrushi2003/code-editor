@@ -266,7 +266,7 @@ app.post('/Projects/update', async (req, res) => {
     }
     try {
         changedCodePos.forEach(patch => {
-            const { startIndx, deleteCount, newLines, startColumn, endColumn } = patch;
+            const { startIndx, deleteCount, endIndx = startIndx, newLines, startColumn, endColumn } = patch;
             if ((startIndx >= 0 && startIndx < codeDoc.code.length) && newLines.length == 1) {
                 var line = codeDoc.code[startIndx];
                 if (line == null) {
@@ -277,6 +277,11 @@ app.post('/Projects/update', async (req, res) => {
                         line.substring(endColumn);
                     codeDoc.code[startIndx] = newLine;
                 }
+            }
+            else if (endIndx - startIndx > 0 && (deleteCount > 1 && newLines.length == 1)) {
+                let codeAtPos = code[endIndx];
+                code.splice(endIndx, 1);
+                code[startIndx] += codeAtPos;
             }
             else {
                 let newLinesR = newLines.join("").includes('\r') ? newLines.join("").split('\r') : newLines;
@@ -289,7 +294,7 @@ app.post('/Projects/update', async (req, res) => {
                 if (newLinesR.length > 1 && startIndx + 1 > code.length - 1) {
                     for (let i = 0; i < newLinesR.length; i++) codeDoc.code.push('');
                 }
-                for (let i = 1; i <  newLinesR.length - 1; i++) {
+                for (let i = 1; i < newLinesR.length - 1; i++) {
                     codeDoc.code.splice(startIndx + i, 1, newLinesR[i]);
                 }
                 codeDoc.code[startIndx + newLinesR.length - 1] = newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn) + codeDoc.code[startIndx + newLinesR.length - 1];
