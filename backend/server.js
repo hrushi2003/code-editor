@@ -297,7 +297,8 @@ app.post('/Projects/update', async (req, res) => {
                 for (let i = 1; i < newLinesR.length - 1; i++) {
                     codeDoc.code.splice(startIndx + i, 1, newLinesR[i]);
                 }
-                codeDoc.code[startIndx + newLinesR.length - 1] = newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn) + codeDoc.code[startIndx + newLinesR.length - 1];
+                codeDoc.code.splice(startIndx + newLinesR.length - 1, 0, newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn));
+                //codeDoc.code[startIndx + newLinesR.length - 1] = newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn) + codeDoc.code[startIndx + newLinesR.length - 1];
             }
         });
         await codeDoc.save();
