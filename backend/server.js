@@ -291,7 +291,7 @@ app.post('/Projects/update', async (req, res) => {
                 const lineAtStart = codeDoc.code[startIndx];
                 const BeforeLine = lineAtStart.substring(0, startColumn);
                 codeDoc.code[startIndx] = BeforeLine + newLinesR[0];
-                if (newLinesR.length > 1 && startIndx + 1 > code.length - 1) {
+                if (newLinesR.length > 1 && startIndx + 1 > codeDoc.code.length - 1) {
                     for (let i = 0; i < newLinesR.length; i++) codeDoc.code.push('');
                 }
                 for (let i = 1; i < newLinesR.length - 1; i++) {
