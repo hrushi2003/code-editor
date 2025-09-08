@@ -223,7 +223,7 @@ const CodeEditor = (props) => {
                     column: column,
                     userId: localStorage.getItem("userId")
                 }
-                showRemoteCursor(editor, cursorData);
+              //  showRemoteCursor(editor, cursorData);
             });
         }
         catch (err) {
@@ -299,8 +299,7 @@ const CodeEditor = (props) => {
 
                     if (selection.positionLineNumber > selection.selectionStartLineNumber) {
                         patched.current.push({
-                            startIndx: selection
-                                .positionLineNumber - 1,
+                            startIndx: startLine,
                             deleteCount: 1,
                             startColumn: 0,
                             endColumn: selection
