@@ -4,7 +4,7 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import ClipLoader from 'react-spinners/ClipLoader';
 import { toast, ToastContainer } from 'react-toastify';
-import { Button, Skeleton, Splitter, Upload, UploadProps } from 'antd';
+import { Button, Splitter } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
@@ -21,10 +21,9 @@ const socket = io('https://code-editor-1-0xyt.onrender.com', {
 const CodeEditor = (props) => {
     socket.auth = { username: localStorage.getItem("userId") };
     const navigate = useNavigate();
-    const [changesMap, setChangesMap] = useState(new Map());
+    // const [changesMap, setChangesMap] = useState(new Map());
     const patched = useRef([]);
     const didInit = useRef(false);
-    const changesMapRef = useRef(changesMap);
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem("token");
     const apiCall = axios.create({
@@ -53,13 +52,10 @@ const CodeEditor = (props) => {
     const [languages, setLanguages] = useState([]);
     const [output, setOutput] = useState('');
     const [members, setMembers] = useState([]);
-    const [isTyping, setTyping] = useState(false);
     const lastTypedRef = useRef(Date.now());
-    const [intervalTime, setIntervalTime] = useState(4000);
     const keyStrokes = useRef([]);
     const [speed, setSpeed] = useState(0);
     const setIntervals = useRef(null);
-    const [contentLoaded, setContentLoaded] = useState(false);
     const [selectedBack, setSelectedBack] = useState(false);
     const editorRef = useRef(null);
     const monacoE = useRef(null);
@@ -90,6 +86,7 @@ const CodeEditor = (props) => {
     }
     const updateCode = async () => {
         console.log(patched.current)
+        setSaved(true);
         const codeData = localStorage.getItem("codeId");
         const currLan = languageRef.current;
         await backendCall.post('/update', {
@@ -102,6 +99,7 @@ const CodeEditor = (props) => {
         }).catch((err) => {
             console.log(err);
         });
+        setSaved(false);
     }
     useEffect(() => {
         getLan();
@@ -119,14 +117,21 @@ const CodeEditor = (props) => {
             socket.disconnect();
         }
     }, [userId]);
-    useEffect(() => {
-        changesMapRef.current = changesMap;
-    }, [changesMap]);
+    //  useEffect(() => {
+    //      changesMapRef.current = changesMap;
+    // }, [changesMap]);
     useEffect(() => {
         languageRef.current = selectedLanguage;
     }, [selectedLanguage]);
     useEffect(() => {
         var setIntervalTime = 7000;
+        if (patched.current.length == 0) {
+            if (setIntervals.current) clearInterval(setIntervals.current);
+            setIntervals.current = setInterval(async () => {
+                console.log(10000 + " ms is my current updation time");
+            }, 10000);
+            return;
+        }
         if (speed > 5) {
             setIntervalTime = 2000;
         }
@@ -139,6 +144,12 @@ const CodeEditor = (props) => {
             console.log(setIntervalTime + " ms is my current updation time");
             if (patched.current.length > 0) {
                 updateCode();
+            }
+            else {
+                if (setIntervals.current) clearInterval(setIntervals.current);
+                setIntervals.current = setInterval(async () => {
+                    console.log(10000 + " ms is my current updation time");
+                }, 10000);
             }
         }, setIntervalTime);
         return () => {
@@ -161,43 +172,81 @@ const CodeEditor = (props) => {
         const speed = (typedChars / elapsedSec)
         setSpeed(speed);
     }
+
+    // to show the corresponding user cursor with username on top in the editor
+    var decorations = {};
+    const showRemoteCursor = (editor, cursor) => {
+        decorations[cursor.userId] = editor.deltaDecorations(
+            decorations[cursor.userId] || [],
+            [
+                {
+                    range: new monacoE.current.Range(
+                        cursor.lineNumber, cursor.column,
+                        cursor.lineNumber, cursor.column
+                    ),
+                    options: {
+                        className: 'border-l-2 border-red-500',
+                        afterContentClassName: `cursor-label`
+                    }
+                },
+            ]
+        );
+        setTimeout(() => {
+            decorations[cursor.userId] = editor.deltaDecorations(
+                decorations[cursor.userId] || [],
+                [
+                    {
+                        range: new monacoE.current.Range(
+                            cursor.lineNumber, cursor.column,
+                            cursor.lineNumber, cursor.column
+                        ),
+                        options: {
+                            className: "border-l-2 border-red-500" // keep cursor, remove label
+                        }
+                    }
+                ]
+            );
+        }, 3000);
+    }
     const handleEditorMount = async (editor, monaco) => {
         try {
             editorRef.current = editor;
             monacoE.current = monaco;
             editor.focus();
-            setContentLoaded(true);
             editor.onDidChangeCursorPosition((event) => {
                 const { position } = event;
                 const lineNumber = position.lineNumber;
                 const column = position.column;
                 setcursorPos({ lineNumber: lineNumber, column: column });
+                const cursorData = {
+                    lineNumber: lineNumber,
+                    column: column,
+                    userId: localStorage.getItem("userId")
+                }
+                showRemoteCursor(editor, cursorData);
             });
         }
         catch (err) {
             console.log(err);
         }
         editor.onKeyDown((event) => {
-            if (event.code === "Enter") {
-                //const lineNumber = position.lineNumber;
-                // const column = position.column;
-                console.log(editor.getPosition(), "the code is trying to get the pos");
-                const position = editor.getPosition();
-                const currentLine = position.lineNumber;
-                const model = editor.getModel();
-                const totalLines = model.getLineCount();
-                const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
-
-                // Track lines from the current line to the end
-                const linesFromCurrent = changesMap;
-                for (let i = currentLine; i <= totalLines; i++) {
-                    linesFromCurrent.set(i, model.getLineContent(i));
-                    socket.emit("changeData", { line: model.getLineContent(i), position: { lineNumber: i, column: 1 }, member: mem });
-                }
-                setChangesMap(linesFromCurrent);
-                // onCursorChangeUpdate(lineNumber,column);
-            }
-            console.log(event.keyCode)
+            /*  if (event.code === "Enter") {
+                  console.log(editor.getPosition(), "the code is trying to get the pos");
+                  const position = editor.getPosition();
+                  const currentLine = position.lineNumber;
+                  const model = editor.getModel();
+                  const totalLines = model.getLineCount();
+                  const mem = localStorage.getItem("userId") === members[0] ? members[1] : members[0];
+  
+                  // Track lines from the current line to the end
+                  const linesFromCurrent = changesMap;
+                  for (let i = currentLine; i <= totalLines; i++) {
+                      linesFromCurrent.set(i, model.getLineContent(i));
+                      socket.emit("changeData", { line: model.getLineContent(i), position: { lineNumber: i, column: 1 }, member: mem });
+                  }
+                  setChangesMap(linesFromCurrent);
+                  // onCursorChangeUpdate(lineNumber,column);
+              }*/
             if (event.keyCode == 1) {
                 const selection = editor.getSelection();
                 const model = editor.getModel();
@@ -206,10 +255,11 @@ const CodeEditor = (props) => {
                     setSelectedBack(true);
                     if (selection.positionLineNumber > selection.selectionStartLineNumber) {
                         patched.current.push({
-                            startIndx: selection.
-                                selectionStartLineNumber - 1,
+                            startIndx: selection
+                                .selectionStartLineNumber - 1,
                             deleteCount: 1,
-                            startColumn: selection.selectionStartColumn - 1,
+                            startColumn: selection
+                                .selectionStartColumn - 1,
                             endColumn: model.getLineContent(selection.startLineNumber).length,
                             newLines: [''],
                             timeStamp: new Date().getTime()
@@ -217,11 +267,12 @@ const CodeEditor = (props) => {
                     }
                     else {
                         patched.current.push({
-                            startIndx: selection.
-                                selectionStartLineNumber - 1,
+                            startIndx: selection
+                                .selectionStartLineNumber - 1,
                             deleteCount: 1,
                             startColumn: 0,
-                            endColumn: selection.selectionStartColumn - 1,
+                            endColumn: selection
+                                .selectionStartColumn - 1,
                             newLines: [''],
                             timeStamp: new Date().getTime()
                         });
@@ -236,7 +287,7 @@ const CodeEditor = (props) => {
                         // Ensure within valid range
                         if (lineNumber >= 1 && lineNumber <= model.getLineCount()) {
                             patched.current.push({
-                                startIndx: startLine + 1,  // backend expects 0-based
+                                startIndx: startLine,  // backend expects 0-based
                                 deleteCount: 1,
                                 startColumn: 0,
                                 endColumn: 9007199254740991,
@@ -248,19 +299,23 @@ const CodeEditor = (props) => {
 
                     if (selection.positionLineNumber > selection.selectionStartLineNumber) {
                         patched.current.push({
-                            startIndx: selection.positionLineNumber - 1,
+                            startIndx: selection
+                                .positionLineNumber - 1,
                             deleteCount: 1,
                             startColumn: 0,
-                            endColumn: selection.endColumn - 1,
+                            endColumn: selection
+                                .endColumn - 1,
                             newLines: [''],
                             timeStamp: new Date().getTime()
                         });
                     }
                     else {
                         patched.current.push({
-                            startIndx: selection.positionLineNumber - 1,
+                            startIndx: selection
+                                .positionLineNumber - 1,
                             deleteCount: 1,
-                            startColumn: selection.endColumn - 1,
+                            startColumn: selection
+                                .positionColumn - 1,
                             endColumn: 9007199254740991,
                             newLines: [''],
                             timeStamp: new Date().getTime()
@@ -271,7 +326,6 @@ const CodeEditor = (props) => {
             }
         });
         editor.onDidChangeModelContent((event) => {
-            setTyping(true);
             lastTypedRef.current = Date.now();
             getSpeed(lastTypedRef.current);
             if (!didInit.current) {
@@ -295,7 +349,7 @@ const CodeEditor = (props) => {
                     deleteCount,
                     endIndx: endLineNumber - 1,
                     startColumn: startColumn - 1,
-                    endColumn: endColumn,
+                    endColumn: endColumn - 1,
                     newLines,
                     timeStamp: new Date().getTime(), // for consistent updates
                 });
@@ -342,9 +396,9 @@ const CodeEditor = (props) => {
         const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
         socket.emit("changeData", { line: line, position: cursorPos, member: mem });
         let lineNo = cursorPos.lineNumber;
-        const updatedChangesMap = new Map(changesMap);
-        updatedChangesMap.set(lineNo, line);
-        setChangesMap(updatedChangesMap);
+        //  const updatedChangesMap = new Map(changesMap);
+        // updatedChangesMap.set(lineNo, line);
+        // setChangesMap(updatedChangesMap);
         // console.log("in the getLine Content" + JSON.stringify(changesMap, null, 2));
     }
     const updateCursorPos = (lineNo, columnNo) => {
@@ -394,9 +448,9 @@ const CodeEditor = (props) => {
             forceMoveMarkers: true
         }]);
         let lineNo = lineNumber;
-        const updatedChangesMap = new Map(changesMap);
-        updatedChangesMap.set(lineNo, changedLine);
-        setChangesMap(updatedChangesMap);
+        // const updatedChangesMap = new Map(changesMap);
+        // updatedChangesMap.set(lineNo, changedLine);
+        //setChangesMap(updatedChangesMap);
 
     }
     const runCode = async () => {
@@ -445,28 +499,6 @@ const CodeEditor = (props) => {
         }
         setLoading(false);
     }
-    var composed = "";
-    const combine = () => {
-        for (let i = 0; i < value.length; i++) {
-            if (i !== value.code.length - 1) composed += value.code[i] + '\n';
-            else {
-                composed += value.code[i];
-            }
-        }
-    }
-    const getChangedLines = (changes) => {
-        changes.changes.forEach((e) => {
-            const start = e.range.startLineNumber;
-            const end = e.range.endLineNumber;
-            for (let lines = start; lines <= end; lines++) {
-                console.log(lines);
-            }
-        });
-    }
-    /* editorRef.current.onDidChangeModelContent((e) => {
-         getChangedLines(e);
-     });*/
-
     return (
         <div className='h-max my-2 w-max overflow-scroll flex flex-row'>
             <ToastContainer />

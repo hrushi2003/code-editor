@@ -236,6 +236,11 @@ app.get('/Projects/getCode', async (req, res) => {
     }
     try {
         const code = await CodeSchema.findById(codeId);
+        const setField = await CodeSchema.findOneAndUpdate(
+            { _id: codeId, version: { $exists: false } },
+            { $set: { version: 1 } },
+            { new: true }
+        );
         if (!code) {
             return res.status(404).json({ message: "Code not found" });
         }
@@ -267,7 +272,7 @@ app.post('/Projects/update', async (req, res) => {
     try {
         changedCodePos.forEach(patch => {
             const { startIndx, deleteCount, endIndx = startIndx, newLines, startColumn, endColumn } = patch;
-            if ((startIndx >= 0 && startIndx < codeDoc.code.length) &&  (newLines.length == 1 && endIndx - startIndx == 0)) {
+            if ((startIndx >= 0 && startIndx < codeDoc.code.length) && (newLines.length == 1 && endIndx - startIndx == 0)) {
                 var line = codeDoc.code[startIndx];
                 if (line == null) {
                     codeDoc.code.splice(startIndx, 0, ...newLines);
@@ -275,10 +280,10 @@ app.post('/Projects/update', async (req, res) => {
                 else {
                     var newLine = line.substring(0, startColumn) + newLines.join("") +
                         line.substring(endColumn);
-                        if(newLine.trim() == ""){
-                            codeDoc.code.splice(startIndx,1);
-                        }
-                    codeDoc.code[startIndx] = newLine;
+                    if (newLine.trim() == "") {
+                        codeDoc.code.splice(startIndx, 1);
+                    }
+                    else codeDoc.code[startIndx] = newLine;
                 }
             }
             else if (endIndx - startIndx > 0 && (deleteCount > 1 && newLines.length == 1)) {
@@ -287,7 +292,8 @@ app.post('/Projects/update', async (req, res) => {
                 codeDoc.code[startIndx] += codeAtPos;
             }
             else {
-                let newLinesR = newLines.join("").includes('\r') ? newLines.join("").split('\r') : newLines;
+                let joinedLines = newLines.join("");
+                let newLinesR = joinedLines.includes('\r') ? joinedLines.split('\r') : newLines;
                 while (startIndx > codeDoc.code.length - 1) {
                     codeDoc.code.push('');
                 }
@@ -298,9 +304,9 @@ app.post('/Projects/update', async (req, res) => {
                     for (let i = 0; i < newLinesR.length; i++) codeDoc.code.push('');
                 }
                 for (let i = 1; i < newLinesR.length - 1; i++) {
-                    codeDoc.code.splice(startIndx + i, 1, newLinesR[i]);
+                    codeDoc.code.splice(startIndx + i, 0, newLinesR[i]);
                 }
-                codeDoc.code.splice(startIndx + newLinesR.length - 1, 0, newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn));
+                if (newLines.length > 1 && newLinesR.join("").trim() !== "") codeDoc.code.splice(startIndx + newLinesR.length - 1, 0, newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn));
                 //codeDoc.code[startIndx + newLinesR.length - 1] = newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn) + codeDoc.code[startIndx + newLinesR.length - 1];
             }
         });
