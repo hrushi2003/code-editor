@@ -275,6 +275,9 @@ app.post('/Projects/update', async (req, res) => {
                 else {
                     var newLine = line.substring(0, startColumn) + newLines.join("") +
                         line.substring(endColumn);
+                        if(newLine.trim() == ""){
+                            codeDoc.code.splice(startIndx,1);
+                        }
                     codeDoc.code[startIndx] = newLine;
                 }
             }

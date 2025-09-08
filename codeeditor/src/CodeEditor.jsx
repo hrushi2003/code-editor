@@ -4,7 +4,7 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import ClipLoader from 'react-spinners/ClipLoader';
 import { toast, ToastContainer } from 'react-toastify';
-import { Button, Splitter, Upload, UploadProps } from 'antd';
+import { Button, Skeleton, Splitter, Upload, UploadProps } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
@@ -60,6 +60,7 @@ const CodeEditor = (props) => {
     const [speed, setSpeed] = useState(0);
     const setIntervals = useRef(null);
     const [contentLoaded, setContentLoaded] = useState(false);
+    const [selectedBack, setSelectedBack] = useState(false);
     const editorRef = useRef(null);
     const monacoE = useRef(null);
 
@@ -202,58 +203,70 @@ const CodeEditor = (props) => {
                 const model = editor.getModel();
                 if (selection && selection.startLineNumber !== selection.endLineNumber) {
                     console.log('User selected multiple lines and pressed Backspace!', selection.startLineNumber, selection.endLineNumber, selection);
-                    if (selection.positionLineNumber > selection.startLineNumber) {
+                    setSelectedBack(true);
+                    if (selection.positionLineNumber > selection.selectionStartLineNumber) {
                         patched.current.push({
                             startIndx: selection.
-                                        selectionStartLineNumber - 1,
+                                selectionStartLineNumber - 1,
                             deleteCount: 1,
-                            startColumn: selection.startColumn - 1,
+                            startColumn: selection.selectionStartColumn - 1,
                             endColumn: model.getLineContent(selection.startLineNumber).length,
                             newLines: [''],
-                            timeStamp: new Date.getTime()
+                            timeStamp: new Date().getTime()
                         });
                     }
                     else {
                         patched.current.push({
                             startIndx: selection.
-                                selectionStartLineNumber,
+                                selectionStartLineNumber - 1,
                             deleteCount: 1,
                             startColumn: 0,
-                            endColumn: selection.startColumn - 1,
+                            endColumn: selection.selectionStartColumn - 1,
                             newLines: [''],
-                            timeStamp: new Date.getTime()
+                            timeStamp: new Date().getTime()
                         });
                     }
-                    for (let i = selection.selectionStartLineNumber + 1; i < selection.endLineNumber; i++) {
-                        patched.current.push({
-                            startIndx: i - 1,
-                            deleteCount: 1,
-                            startColumn: 0,
-                            endColumn: model.getLineContent(i).length,
-                            newLines : [''],
-                            timeStamp: new Date().getTime(), // for consistent updates
-                        });
+                    let startLine = Math.min(selection.selectionStartLineNumber, selection.positionLineNumber);
+                    let endLine = Math.max(selection.selectionStartLineNumber, selection.positionLineNumber);
+                    let count = endLine - startLine;
+
+                    for (let i = 1; i < count; i++) {
+                        let lineNumber = startLine + i;
+
+                        // Ensure within valid range
+                        if (lineNumber >= 1 && lineNumber <= model.getLineCount()) {
+                            patched.current.push({
+                                startIndx: startLine + 1,  // backend expects 0-based
+                                deleteCount: 1,
+                                startColumn: 0,
+                                endColumn: 9007199254740991,
+                                newLines: [''],
+                                timeStamp: new Date().getTime()
+                            });
+                        }
                     }
-                    if (selection.positionLineNumber > selection.startLineNumber) {
+
+                    if (selection.positionLineNumber > selection.selectionStartLineNumber) {
                         patched.current.push({
                             startIndx: selection.positionLineNumber - 1,
                             deleteCount: 1,
                             startColumn: 0,
                             endColumn: selection.endColumn - 1,
                             newLines: [''],
-                            timeStamp: new Date.getTime()
+                            timeStamp: new Date().getTime()
                         });
                     }
                     else {
                         patched.current.push({
-                            startIndx: selection.positionLineNumber,
+                            startIndx: selection.positionLineNumber - 1,
                             deleteCount: 1,
                             startColumn: selection.endColumn - 1,
-                            endColumn: model.getLineContent(selection.endLineNumber).length,
+                            endColumn: 9007199254740991,
                             newLines: [''],
-                            timeStamp: new Date.getTime()
+                            timeStamp: new Date().getTime()
                         });
                     }
+                    setSelectedBack(false);
                 }
             }
         });
@@ -263,6 +276,10 @@ const CodeEditor = (props) => {
             getSpeed(lastTypedRef.current);
             if (!didInit.current) {
                 didInit.current = true;
+                return;
+            }
+            const selection = editor.getSelection();
+            if (selectedBack && selection.startLineNumber != null) {
                 return;
             }
             const changes = event.changes;
@@ -276,7 +293,7 @@ const CodeEditor = (props) => {
                 patched.current.push({
                     startIndx,
                     deleteCount,
-                    endIndx : endLineNumber - 1,
+                    endIndx: endLineNumber - 1,
                     startColumn: startColumn - 1,
                     endColumn: endColumn,
                     newLines,
@@ -293,7 +310,7 @@ const CodeEditor = (props) => {
                 }
             }).then((response) => {
                 const ans = response.data.code.code.join('\n');
-                console.log(response.data.code)
+                console.log(response.data.code);
                 setCode(ans);
                 const lan = response.data.code.language ? response.data.code.language : "java";
                 setSelectedLanguage(lan);
