@@ -16,7 +16,10 @@ const OpsSchema = new mongoose.Schema({
         ref : 'user',
         required : true
     },
-    timestamps: true
+    timestamps: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 export const Ops = mongoose.model('ops', OpsSchema);

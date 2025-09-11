@@ -1,4 +1,4 @@
-import mongoose, { Mongoose } from "mongoose";
+import mongoose from "mongoose";
 
 const code = new mongoose.Schema({
     codeName : {
@@ -18,6 +18,7 @@ const code = new mongoose.Schema({
         }
         }
     ]},
+    version : {type : Number, default : 1},
     leader : {type : mongoose.Schema.Types.ObjectId, required : true, default : null},
     code : {type : [String]}
 })

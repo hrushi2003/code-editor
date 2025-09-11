@@ -8,7 +8,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import { CodeSchema } from "./models/codes.js";
+import { Ops } from "./models/Ops.js";
 import { console } from "inspector";
+import { diffMatchPatchAlgo } from "./diffMatchPatchAlgo.js";
 const app = express();
 app.use(bodyParser.json());
 app.use(express.json());
@@ -29,6 +31,7 @@ const io = new Server(server, {
 });
 app.use(cors());
 connect();
+var operations = 0;    
 io.on("connection", socket => {
     console.log("Client connected");
     socket.on("cursorChange", (data, callback) => {
@@ -244,7 +247,20 @@ app.get('/Projects/getCode', async (req, res) => {
         if (!code) {
             return res.status(404).json({ message: "Code not found" });
         }
-        return res.status(200).json({ "code": code });
+        const getAllOps = await Ops.find({ codeId: code._id }).sort({ version: 1 });
+        console.log(getAllOps, "all ops",code);
+        try {
+            const result = await diffMatchPatchAlgo(getAllOps, code);
+            console.log(result,getAllOps,code,"the output");
+            result.version = operations + getAllOps.length;
+            await result.save();
+            operations = 0;
+            await Ops.deleteMany({ codeId: code._id });
+            return res.status(200).json({ "code":  code, "ops": getAllOps, "res" : result });// result
+        }
+        catch (err) {
+            return res.status(500).json({ "message": "error in diffMatchPatchAlgo", "error": err });
+        }
     }
     catch (err) {
         console.log(err);
@@ -258,59 +274,31 @@ app.post('/Projects/update', async (req, res) => {
     if (!codeDoc || !codeDoc.code) {
         err.message = "code Not Found";
     }
-    try {
-        codeDoc.language = language;
-        changedCodePos.sort((a, b) => {
-            return a.timeStamp - b.timeStamp;
-        });
-    }
-    catch (error) {
-        // res.status(500).json({"message" : "error in sorting"})
-        err.message = "error in sorting";
-        console.log(err);
-    }
+    codeDoc.language = language;
+    let opsToSave = [];
+   if(operations == null || operations == 0) operations = codeDoc.version;
+    let version = codeDoc.version + 1;
     try {
         changedCodePos.forEach(patch => {
             const { startIndx, deleteCount, endIndx = startIndx, newLines, startColumn, endColumn } = patch;
-            if ((startIndx >= 0 && startIndx < codeDoc.code.length) && (newLines.length == 1 && endIndx - startIndx == 0)) {
-                var line = codeDoc.code[startIndx];
-                if (line == null) {
-                    codeDoc.code.splice(startIndx, 0, ...newLines);
-                }
-                else {
-                    var newLine = line.substring(0, startColumn) + newLines.join("") +
-                        line.substring(endColumn);
-                    if (newLine.trim() == "") {
-                        codeDoc.code.splice(startIndx, 1);
-                    }
-                    else codeDoc.code[startIndx] = newLine;
-                }
-            }
-            else if (endIndx - startIndx > 0 && (deleteCount > 1 && newLines.length == 1)) {
-                let codeAtPos = codeDoc.code[endIndx];
-                codeDoc.code.splice(endIndx, 1);
-                codeDoc.code[startIndx] += codeAtPos;
-            }
-            else {
-                let joinedLines = newLines.join("");
-                let newLinesR = joinedLines.includes('\r') ? joinedLines.split('\r') : newLines;
-                while (startIndx > codeDoc.code.length - 1) {
-                    codeDoc.code.push('');
-                }
-                const lineAtStart = codeDoc.code[startIndx];
-                const BeforeLine = lineAtStart.substring(0, startColumn);
-                codeDoc.code[startIndx] = BeforeLine + newLinesR[0];
-                if (newLinesR.length > 1 && startIndx + 1 > codeDoc.code.length - 1) {
-                    for (let i = 0; i < newLinesR.length; i++) codeDoc.code.push('');
-                }
-                for (let i = 1; i < newLinesR.length - 1; i++) {
-                    codeDoc.code.splice(startIndx + i, 0, newLinesR[i]);
-                }
-                if (newLines.length > 1) codeDoc.code.splice(startIndx + newLinesR.length - 1, 0, newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn));
-                //codeDoc.code[startIndx + newLinesR.length - 1] = newLinesR[newLinesR.length - 1] + lineAtStart.substring(startColumn) + codeDoc.code[startIndx + newLinesR.length - 1];
-            }
+            opsToSave.push(new Ops({
+                codeId: codeDoc._id,
+                version: version++,
+                payload: {
+                    startIndx,
+                    endIndx,
+                    newLines,
+                    startColumn,
+                    endColumn,
+                    deleteCount
+                },
+                changedBy: "6728a1ad243625be55ec5cb9", // change it to req.userId
+                timestamps: patch.timeStamp
+            }));
         });
-        await codeDoc.save();
+        if (opsToSave.length > 0) {
+            await Ops.insertMany(opsToSave);
+        }
         return res.status(200).json({ "message": "Code updated successfully" });
     }
     catch (error) {
@@ -321,6 +309,6 @@ app.post('/Projects/update', async (req, res) => {
         });
     }
 });
-server.listen(3000, () => {
-    console.log("Server is running on port 3000");
+server.listen(4000, () => {
+    console.log("Server is running on port 4000");
 })

@@ -41,7 +41,6 @@ const CodeEditor = (props) => {
             'Authorization': `Bearer ${token}`
         }
     });
-    const [value, setValue] = useState([]);
     const [loading, setLoading] = useState(false);
     const [code, setCode] = useState("");
     const [saved, setSaved] = useState(false);
@@ -117,9 +116,6 @@ const CodeEditor = (props) => {
             socket.disconnect();
         }
     }, [userId]);
-    //  useEffect(() => {
-    //      changesMapRef.current = changesMap;
-    // }, [changesMap]);
     useEffect(() => {
         languageRef.current = selectedLanguage;
     }, [selectedLanguage]);
@@ -201,7 +197,7 @@ const CodeEditor = (props) => {
                             cursor.lineNumber, cursor.column
                         ),
                         options: {
-                            className: "border-l-2 border-red-500" // keep cursor, remove label
+                            className: "border-l-2 border-red-500" 
                         }
                     }
                 ]
@@ -395,20 +391,10 @@ const CodeEditor = (props) => {
         const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
         socket.emit("changeData", { line: line, position: cursorPos, member: mem });
         let lineNo = cursorPos.lineNumber;
-        //  const updatedChangesMap = new Map(changesMap);
-        // updatedChangesMap.set(lineNo, line);
-        // setChangesMap(updatedChangesMap);
-        // console.log("in the getLine Content" + JSON.stringify(changesMap, null, 2));
     }
     const updateCursorPos = (lineNo, columnNo) => {
         const model = editorRef.current;
         model.setPosition({ lineNumber: lineNo, column: columnNo });
-    }
-    const formatCode = (e) => {
-        const arr = e.split("\n");
-        // const model = editorRef.current;
-        // let x = model.getPosition().toString()[1];
-        setValue([...arr]);
     }
     socket.on("updateCursorAndData", data => {
         if (data != null) {
@@ -447,10 +433,6 @@ const CodeEditor = (props) => {
             forceMoveMarkers: true
         }]);
         let lineNo = lineNumber;
-        // const updatedChangesMap = new Map(changesMap);
-        // updatedChangesMap.set(lineNo, changedLine);
-        //setChangesMap(updatedChangesMap);
-
     }
     const runCode = async () => {
         setLoading(true);
@@ -528,7 +510,9 @@ const CodeEditor = (props) => {
                             defaultValue=" // comment"
                             value={code}
                             onMount={handleEditorMount}
-                            onChange={(e) => formatCode(e)}
+                            onChange={(e) => {
+                                ""
+                            }}
                         />
                     </div>
                 </Splitter.Panel>
