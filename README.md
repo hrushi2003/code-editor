@@ -74,8 +74,3 @@ Supports real-time cursor tracking, batched updates, and efficient compaction of
 - 📝 Syntax highlighting with Monaco’s language services.  
 - 🌍 Support for cross-region low-latency replication.  
 
----
-
-## 📜 License
-MIT
-
