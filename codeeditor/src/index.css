@@ -11,9 +11,13 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
-.cursor-label::after {
-  content: "Hrushi0406";
-  @apply bg-red-500 text-white text-xs px-2 py-0.5 rounded absolute transform -translate-y-full;
+.cursor-label {
+  background: red;
+  color: white;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-left: 2px;
 }
 
 @tailwind base;

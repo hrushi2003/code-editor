@@ -44,12 +44,12 @@ io.on("connection", socket => {
         callback();
     });
     socket.on("changeData", (data, callback) => {
-        const { line, position, member } = data;
-        if (line == null || position == null) {
+        const { changes,userId } = data;
+        if (changes == null) {
             callback();
             return;
         }
-        if (users[member]) socket.to(users[member]).emit("updateCursorAndData", { line, position });
+        if (users[userId]) socket.to(users[userId]).emit("updateCursorAndData", { changes });
         callback();
     });
     socket.on("disconnect", () => {
@@ -238,12 +238,13 @@ app.get('/Projects/getCode', async (req, res) => {
         return res.status(404).json({ message: "The provided code id is null" });
     }
     try {
-        const code = await CodeSchema.findById(codeId);
+        const code = await CodeSchema.findById(codeId).populate({path : "users.userId", select : 'username'}).exec();
         const setField = await CodeSchema.findOneAndUpdate(
             { _id: codeId, version: { $exists: false } },
             { $set: { version: 1 } },
             { new: true }
         );
+
         if (!code) {
             return res.status(404).json({ message: "Code not found" });
         }

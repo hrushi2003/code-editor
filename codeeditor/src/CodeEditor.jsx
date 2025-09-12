@@ -4,10 +4,12 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import ClipLoader from 'react-spinners/ClipLoader';
 import { toast, ToastContainer } from 'react-toastify';
-import { Button, Splitter } from 'antd';
+import { Button, Splitter, Modal, Select } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { EditOutlined } from '@ant-design/icons';
+import { DeleteOutlined, UserOutlined } from '@ant-design/icons';
 const socket = io('https://code-editor-1-0xyt.onrender.com', {
     auth: {
         serverOffset: 0
@@ -56,9 +58,22 @@ const CodeEditor = (props) => {
     const [speed, setSpeed] = useState(0);
     const setIntervals = useRef(null);
     const [selectedBack, setSelectedBack] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
+    const [isRemote,setIsRemote] = useState(false);
     const editorRef = useRef(null);
     const monacoE = useRef(null);
 
+
+
+    const showLoading = () => {
+        setShowModal(true);
+        setModalLoading(true);
+
+        setTimeout(() => {
+            setModalLoading(false);
+        }, 2000)
+    }
     const getLan = async () => {
         try {
             await getLanguages();
@@ -155,8 +170,6 @@ const CodeEditor = (props) => {
     useEffect(() => {
         // socket.emit('cursorChange',cursorPos);
         cursorRef.current = cursorPos;
-        console.log(cursorPos);
-        getLineContent();
     }, [cursorPos]);
 
     // To get the speed of typed characters
@@ -182,7 +195,10 @@ const CodeEditor = (props) => {
                     ),
                     options: {
                         className: 'border-l-2 border-red-500',
-                        afterContentClassName: `cursor-label`
+                        after :  {
+                            content : members.filter(x => x.userId === cursor.userId),
+                            afterContentClassName: `cursor-label`
+                        }
                     }
                 },
             ]
@@ -197,7 +213,7 @@ const CodeEditor = (props) => {
                             cursor.lineNumber, cursor.column
                         ),
                         options: {
-                            className: "border-l-2 border-red-500" 
+                            className: "border-l-2 border-red-500"
                         }
                     }
                 ]
@@ -328,7 +344,7 @@ const CodeEditor = (props) => {
                 return;
             }
             const selection = editor.getSelection();
-            if (selectedBack && selection.startLineNumber != null) {
+            if (selectedBack && selection.startLineNumber != null || isRemote) {
                 return;
             }
             const changes = event.changes;
@@ -348,10 +364,19 @@ const CodeEditor = (props) => {
                     newLines,
                     timeStamp: new Date().getTime(), // for consistent updates
                 });
+                const changeData = {
+                    startColumn,
+                    endColumn,
+                    startLineNumber,
+                    endLineNumber,
+                    text,
+                    timeStamp : new Date().getTime()
+                }
+                console.log(changeData,"ChangeData")
+                SendChanges(changeData);
             }
         })
         const codeData = localStorage.getItem("codeId");
-        console.log(codeData);
         if (codeData) {
             await backendCall.get("/getCode", {
                 params: {
@@ -359,11 +384,11 @@ const CodeEditor = (props) => {
                 }
             }).then((response) => {
                 const ans = response.data.code.code.join('\n');
-                console.log(response.data.code);
                 setCode(ans);
                 const lan = response.data.code.language ? response.data.code.language : "java";
                 setSelectedLanguage(lan);
                 const assignedMembers = response.data.code.users.map(mem => mem.userId);
+                console.log(assignedMembers);
                 setMembers(assignedMembers);
             }).catch((err) => {
                 console.log(err);
@@ -382,15 +407,18 @@ const CodeEditor = (props) => {
     }
     const handleLanguageChange = (e) => {
         setSelectedLanguage(e.target.value);
-        console.log(selectedLanguage);
+      //  console.log(selectedLanguage);
     }
-    const getLineContent = () => {
-        const editor = editorRef.current;
-        const line = editor?.getModel().getLineContent(cursorPos.lineNumber);
-        console.log(members);
-        const mem = localStorage.getItem("userId") == members[0] ? members[1] : members[0];
-        socket.emit("changeData", { line: line, position: cursorPos, member: mem });
-        let lineNo = cursorPos.lineNumber;
+    const SendChanges = (data) => {
+        console.log("Running inside the send changes block")
+        members.forEach((member) => {
+            console.log(member,data);
+            if(member.userId === localStorage.getItem("userId")) return;
+            socket.emit('changeData', {
+                userId: member.userId,
+                changes: data
+            });
+        })
     }
     const updateCursorPos = (lineNo, columnNo) => {
         const model = editorRef.current;
@@ -398,41 +426,29 @@ const CodeEditor = (props) => {
     }
     socket.on("updateCursorAndData", data => {
         if (data != null) {
-            const lineNo = data.position.lineNumber ? data.position.lineNumber : 1;
-            const columnNo = data.position.column ? data.position.column : 1;
-            const content = data.line ? data.line : "";
-            console.log(lineNo, columnNo, content, "iam executing");
+            setIsRemote(true);
+         //   console.log(data.changes, "iam executing");
             // updateCursorPos(lineNo,columnNo);
-            setLine(lineNo, content);
+            setLine(data.changes);
+            setIsRemote(false);
         }
     })
-    const setLine = (lineNumber, changedLine) => {
-        // if(lineNumber > value.length) return;
+    const setLine = (changes) => {
         const model = editorRef.current;
         if (model == null) {
             console.log("model is null");
             return;
         }
-        const lineCount = model.getModel().getLineCount();
-        if (lineNumber > lineCount) {
-            const position = { lineNumber: lineNumber, column: 1 };
-            model.getModel().applyEdits([
-                {
-                    range: new monacoE.current.Range(position.lineNumber, position.column, position.lineNumber, position.column + 1),
-                    text: '\n',
-                    forceMoveMarkers: true,
-                }
-            ]);
-            return;
-        }
-        console.log(model)
-        const lineContent = model.getModel().getLineContent(lineNumber);
         model.getModel().applyEdits([{
-            range: new monacoE.current.Range(lineNumber, 1, lineNumber, lineContent.length + 1),
-            text: changedLine,
+            range: new monacoE.current.Range(
+                changes.startLineNumber,
+                changes.startColumn,
+                changes.endLineNumber,
+                changes.endColumn
+            ),
+            text: changes.text,
             forceMoveMarkers: true
         }]);
-        let lineNo = lineNumber;
     }
     const runCode = async () => {
         setLoading(true);
@@ -481,11 +497,11 @@ const CodeEditor = (props) => {
         setLoading(false);
     }
     return (
-        <div className='h-max my-2 w-max overflow-scroll flex flex-row'>
+        <div className='h-max my-2 w-max overflow-auto scrollbar-none flex flex-row'>
             <ToastContainer />
             <Splitter style={{
                 height: 950,
-                width: 1500,
+                width: 1600,
             }}>
                 <Splitter.Panel position="left" defaultSize="60%" minSize="20%" maxSize="90%">
                     <div className='flex flex-col'>
@@ -510,39 +526,103 @@ const CodeEditor = (props) => {
                             defaultValue=" // comment"
                             value={code}
                             onMount={handleEditorMount}
-                            onChange={(e) => {
-                                ""
+                            options={{
+                                quickSuggestions: true,
+                                suggestOnTriggerCharacters: true,
+                                wordBasedSuggestions: true,
+                                snippetSuggestions: "inline",
                             }}
                         />
                     </div>
                 </Splitter.Panel>
-                <Splitter.Panel>
-                    <div className='flex mx-2 flex-col'>
+                <Splitter.Panel defaultSize="40%" minSize="10%" maxSize="90%">
+                    <div className='flex mx-2 flex-col h-full'>
                         <div className='flex flex-row'>
-                            <button onClick={runCode} className='mb-2 w-[100px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
+                            <button onClick={runCode} className='mb-2 w-[100px] h-max p-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
                                 {loading ? <ClipLoader className='mx-auto my-auto' color='blue' size={20} /> : "Run Code"}
                             </button>
-                            <button className='mb-2 w-[200px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
+                            <button className='mb-2 w-[200px] h-max p-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
                                 {saved ? <ClipLoader className='mx-auto my-auto' color='blue' size={20} /> : "Saved succesfully"}
                             </button>
                             <button onClick={() => {
                                 localStorage.clear();
                                 navigate('/');
-                            }} className='mb-2 w-[100px] h-[30px] pl-2 pr-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
+                            }} className='mb-2 w-[100px] h-max p-2 font-bold opacity-75 text-blue-600 hover:text-white border rounded-md mx-3 bg-blue-200 hover:bg-green-400'>
                                 Logout
                             </button>
                         </div>
-                        <div className='bg-gray-800 p-2 w-[600px] border rounded-md h-[93vh]'>
-                            <p className={output.stdout ? "text-white font-bold ml-2 mt-2" : "text-white font-bold opacity-50 ml-2 mt-2"}>
+                        <div className='bg-gray-800 p-2 flex-1 border rounded-md h-[93vh]'>
+                            <p className={output.stdout ? "text-white font-bold ml-2 mt-2 flex flex-col" : "text-white font-bold opacity-50 ml-2 mt-2 flex flex-col"}>
                                 {output ? output.stdout.split('\n').map((element, index) => {
                                     return (<span key={index}>{element + '\n'}</span>)
                                 })
-                                    : "Click the run button to test your code"}
+                                : "Click the run button to test your code"}
                             </p>
                         </div>
                     </div>
                 </Splitter.Panel>
             </Splitter>
+            <div className='w-[310px] h-[950px] bg-gray-700 ml-1 rounded-md shadow-2xl'>
+                <div className='p-4 text-white border-b-2 border-gray-900'>
+                    <h1 className="text-2xl font-bold text-white">Team Activity</h1>
+                </div>
+                <div className='flex flex-col gap-2 items-center'>
+                    {members?.map((value, indx) => {
+                        return (
+                            <div
+                                className='text-white w-[100%] h-max rounded-md p-2 gap-2 bg-gray-500 flex flex-row items-center'
+                                key={indx}>
+                                <UserOutlined className='text-blue-400 bg-gray-200 p-1 rounded-full' />
+                                <div className='font-sans gap-1'>
+                                    {//value._id == localStorage.getItem("userId") ? value.username + " ( You )" : value.username
+                                        <span className='text-gray-100 text-[14px]'>Hrushikesh0406
+                                            <span className='text-sky-300 text-[12px] font-bold'>( Leader & You )
+                                            </span>
+                                        </span>
+                                    }
+                                    <div className='flex flex-row items-center gap-1'>
+                                        <div class="w-2 h-2 bg-green-500 rounded-full border-2 border-gray-300"></div>
+                                        <p className='font-bold text-[13px]'>Online</p>
+                                    </div>
+                                </div>
+                                <EditOutlined onClick={showLoading} className='text-green-400 ml-1 cursor-pointer' />
+                                <Modal
+                                    title={<h1 className='font-bold'>EDIT USER OPTIONS</h1>}
+                                    footer={
+                                        <div className='flex flex-row items-center gap-2'>
+                                            <Button type='primary' onClick={() => {
+
+                                            }}
+                                            >Save Changes</Button>
+                                            <Button type='primary' onClick={() => {
+
+                                            }}>
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    }
+                                    loading={modalLoading}
+                                    open={showModal}
+                                    onCancel={() => setShowModal(false)}
+                                >
+                                    <p className='font-bold text-blue-400'>CHANGE USER PERMISSIONS ON CODE RIGHTS</p>
+                                    <Select
+                                        defaultValue="Read and Write"
+                                        style={{ width: 200 }}
+                                        options={[
+                                            { value: 'Read and Write' },
+                                            { value: "Read Only" }
+                                        ]}
+                                    >
+                                    </Select>
+                                </Modal>
+                                <DeleteOutlined className='text-red-500 cursor-pointer' />
+                            </div>
+                        )
+                    })
+                    }
+                </div>
+            </div>
         </div>
     );
 }
