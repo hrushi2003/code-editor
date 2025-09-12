@@ -93,3 +93,31 @@ sequenceDiagram
     BE-->>WS: Broadcast to other users
     WS-->>UserB: Send update
     UserB->>FE: Apply diff/patch
+
+## 🧹 Compaction Flow
+
+```mermaid
+flowchart TD
+    A[Incoming Operations<br/>(Ops Log)] -->|Append| B[MongoDB Ops Collection]
+
+    B -->|Periodically (10 min / on file open)| C[Compaction Engine]
+
+    C -->|Merge Ops| D[Snapshot Document]
+
+    D -->|Stored in DB| E[Latest Code State]
+
+    E -->|Served to Users| F[Fast Load & Edit]
+    
+    C -->|Discard Old Ops| G[Reduced DB Size]
+
+---
+
+This shows:  
+- All edits go into **Ops Collection**.  
+- A **Compaction Engine** merges them into a **Snapshot** (like CRDT consolidation).  
+- Snapshots are what you serve on user login = fast load.  
+- Old ops get discarded → keeps DB light.  
+
+Together with the sequence diagram, your README will look 🔥 and **interviewer-ready**.  
+
+👉 Do you also want me to add a **sample MongoDB schema** for `Ops` and `Snapshot` in the README so companies like Google/Microsoft see your design thinking?
