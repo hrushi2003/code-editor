@@ -75,3 +75,21 @@ Supports real-time cursor tracking, batched updates, and efficient compaction of
 - 📝 Syntax highlighting with Monaco’s language services.  
 - 🌍 Support for cross-region low-latency replication.  
 
+## 🔄 System Flow
+
+```mermaid
+sequenceDiagram
+    participant UserA as User A (Editor)
+    participant FE as Frontend
+    participant WS as WebSocket Server
+    participant BE as Backend (Express)
+    participant DB as MongoDB
+    participant UserB as User B (Editor)
+
+    UserA->>FE: Type code / Move cursor
+    FE->>WS: Emit payload (cursor or text)
+    WS->>BE: Forward event
+    BE->>DB: Store operation (batched)
+    BE-->>WS: Broadcast to other users
+    WS-->>UserB: Send update
+    UserB->>FE: Apply diff/patch
