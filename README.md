@@ -52,6 +52,7 @@ Supports real-time cursor tracking, batched updates, and efficient compaction of
 3. **Backend Storage**  
    - Stores operations like a CRDT log.  
    - Runs **compaction every 10 minutes** or when a file is opened.
+   - Operations update in DB takes O(1) in general.
 
 4. **Diff/Patch Algorithm**  
    - Applies ops in timestamp order.  
