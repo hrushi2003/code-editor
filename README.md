@@ -94,6 +94,22 @@ sequenceDiagram
     WS-->>UserB: Send update
     UserB->>FE: Apply diff/patch
 ```
+## Diff Match Patch Flow
+```mermaid
+sequenceDiagram
+  participant U as User (Monaco)
+  participant D as Diff Engine
+  participant RT as Real-time Server
+  participant DB as Ops Store
+  participant P as Peers
+
+  U->>D: Local edit (range, text)
+  D->>D: Compute minimal diff (start,end,newText)
+  D-->>RT: Patch payload
+  RT->>DB: Append op (O(1))
+  RT-->>P: Broadcast patch
+  P->>P: Apply patch → update editor
+```
 ## Compaction Flow
 ```mermaid
 sequenceDiagram
