@@ -107,3 +107,16 @@ sequenceDiagram
   Worker->>Snap: write new snapshot
   Worker->>DB: delete archived ops
 ```
+## Edit and Broadcast
+```mermaid
+sequenceDiagram
+  participant U as User (Monaco)
+  participant WS as WebSocket/RT service
+  participant DB as Ops DB
+  participant P as Peer(s)
+
+  U->>WS: code-change (range, text, ts)
+  WS->>DB: append op (O(1))
+  WS-->>P: broadcast remote-change
+  P->>PeerEditor: applyEdits()
+```
