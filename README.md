@@ -93,3 +93,17 @@ sequenceDiagram
     BE-->>WS: Broadcast to other users
     WS-->>UserB: Send update
     UserB->>FE: Apply diff/patch
+```
+## Compaction Flow
+```mermaid
+sequenceDiagram
+  participant Worker as Compaction Worker
+  participant DB as MongoDB
+  participant Snap as Snapshots
+
+  Worker->>DB: load latest snapshot
+  Worker->>DB: fetch ops after snapshot.version
+  Worker->>Worker: apply ops in-memory
+  Worker->>Snap: write new snapshot
+  Worker->>DB: delete archived ops
+```
