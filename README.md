@@ -136,6 +136,7 @@ sequenceDiagram
   WS-->>P: broadcast remote-change
   P->>PeerEditor: applyEdits()
 ```
+## Operation Coalescing
 ```mermaid
 flowchart TD
 
