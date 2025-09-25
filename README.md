@@ -136,3 +136,35 @@ sequenceDiagram
   WS-->>P: broadcast remote-change
   P->>PeerEditor: applyEdits()
 ```
+```mermaid
+flowchart TD
+
+    subgraph Rope["Traditional Rope Data Structure"]
+        A1["Balanced Binary Tree"]
+        A2["Leaves store substrings"]
+        A3["Internal nodes store weights"]
+        A1 --> A2
+        A1 --> A3
+    end
+
+    subgraph PieceTable["Piece Table"]
+        B1["Original File Buffer"]
+        B2["Add Buffer (edits)"]
+        B3["Table of spans (pointers)"]
+        B1 --> B3
+        B2 --> B3
+    end
+
+    subgraph YourAlgo["Your Hybrid Approach (LinkedMapBuffer)"]
+        C1["LinkedList → Maintains line order (O(1) insert/delete)"]
+        C2["HashMap → Direct access by lineId (O(1))"]
+        C3["Ops Batching → Merge keystrokes into single op"]
+        C4["Diff-Patch → Store transformations instead of whole text"]
+        C1 --> C2
+        C2 --> C3
+        C3 --> C4
+    end
+
+    Rope -->|Different| YourAlgo
+    PieceTable -->|Different| YourAlgo
+```
