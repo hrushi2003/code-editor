@@ -152,3 +152,25 @@ flowchart TD
         C3 --> C4
     end
 ```
+## Time Complexity
+```mermaid
+flowchart LR
+  A[Number of edits ⟶] ---|increases| X(( ))
+  subgraph ArrayApproach["Array with splice"]
+    direction TB
+    A1[Insert in middle] --> A2[Shift following lines (O(n))]
+    A2 --> A3[Cost grows linearly as edits increase]
+  end
+
+  subgraph Hybrid["LinkedList + Map (My Approach)"]
+    direction TB
+    H1[Insert in middle] --> H2[Update pointers + map (O(1))]
+    H2 --> H3[Cost stays ~constant regardless of edits]
+  end
+
+  A --> A1
+  A --> H1
+
+  classDef header fill:#f8f9fa,stroke:#333,stroke-width:1px;
+  class ArrayApproach,Hybrid header;
+```
