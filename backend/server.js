@@ -300,6 +300,7 @@ app.post('/Projects/update', async (req, res) => {
         if (opsToSave.length > 0) {
             await Ops.insertMany(opsToSave);
         }
+        await codeDoc.save();
         return res.status(200).json({ "message": "Code updated successfully" });
     }
     catch (error) {
