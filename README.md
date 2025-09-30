@@ -93,3 +93,60 @@ sequenceDiagram
     BE-->>WS: Broadcast to other users
     WS-->>UserB: Send update
     UserB->>FE: Apply diff/patch
+```
+## Diff Match Patch Flow
+```mermaid
+sequenceDiagram
+  participant U as User (Monaco)
+  participant D as Diff Engine
+  participant RT as Real-time Server
+  participant DB as Ops Store
+  participant P as Peers
+
+  U->>D: Local edit (range, text)
+  D->>D: Compute minimal diff (start,end,newText)
+  D-->>RT: Patch payload
+  RT->>DB: Append op (O(1))
+  RT-->>P: Broadcast patch
+  P->>P: Apply patch → update editor
+```
+## Compaction Flow
+```mermaid
+sequenceDiagram
+  participant Worker as Compaction Worker
+  participant DB as MongoDB
+  participant Snap as Snapshots
+
+  Worker->>DB: load latest snapshot
+  Worker->>DB: fetch ops after snapshot.version
+  Worker->>Worker: apply ops in-memory
+  Worker->>Snap: write new snapshot
+  Worker->>DB: delete archived ops
+```
+## Edit and Broadcast
+```mermaid
+sequenceDiagram
+  participant U as User (Monaco)
+  participant WS as WebSocket/RT service
+  participant DB as Ops DB
+  participant P as Peer(s)
+
+  U->>WS: code-change (range, text, ts)
+  WS->>DB: append op (O(1))
+  WS-->>P: broadcast remote-change
+  P->>PeerEditor: applyEdits()
+```
+## Operation Coalescing
+```mermaid
+flowchart TD
+
+    subgraph YourAlgo["Hybrid Approach (LinkedMapBuffer)"]
+        C1["LinkedList → Maintains line order (O(1) insert/delete)"]
+        C2["HashMap → Direct access by lineId (O(1))"]
+        C3["Ops Batching → Merge keystrokes into single op"]
+        C4["Diff-Patch → Store transformations instead of whole text"]
+        C1 --> C2
+        C2 --> C3
+        C3 --> C4
+    end
+```
