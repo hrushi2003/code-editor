@@ -30,9 +30,10 @@ export const diffMatchPatchAlgo = (changedCodePos, codeDoc) => {
                 (deleteCount > 1 && newLines.length == 1)
             ) {
                 let codeAtPos = codeDoc.code[endIndx];
-                codeDoc.code.splice(endIndx, 1);
                 codeDoc.code[startIndx] += codeAtPos;
+                codeDoc.code.splice(endIndx, 1);
             }
+
             else {
                 let joinedLines = newLines.join("");
                 let newLinesR = joinedLines.includes('\r') ? joinedLines.split('\r') : newLines;

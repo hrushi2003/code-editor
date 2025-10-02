@@ -75,7 +75,7 @@ function mergeOps(op1, op2) {
     }
     let [first, second] = op1.startColumn <= op2.startColumn ? [op1, op2] : [op2, op1];
 
-    if (first.endColumn < second.startColumn) {
+   /* if (first.endColumn < second.startColumn) {
         return {
             startColumn: first.startColumn,
             endColumn: second.endColumn,
@@ -83,18 +83,18 @@ function mergeOps(op1, op2) {
             deleteCount: 1,
             newLines: [first.newLines.join("") + second.newLines.join("")]
         }
-    }
+    }*/
     const startColumn = Math.min(first.startColumn, second.startColumn);
     const endColumn = Math.max(first.endColumn, second.endColumn);
 
     const newString = first.newLines[0].substring(0, second.startColumn) +
         second.newLines.join("") +
-        first.newLines[0].substring(second.endColumn);
+        first.newLines[0].substring(second.startColumn);
 
     return {
         startIndx: first.startIndx,
         startColumn,
-        endColumn,
+        endColumn : endColumn,
         deleteCount: op1.deleteCount,
         newLines: [newString]
     };

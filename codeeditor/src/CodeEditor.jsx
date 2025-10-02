@@ -413,6 +413,7 @@ const handleEditorMount = async (editor, monaco) => {
         const changes = event.changes;
         for (const change of changes) {
             const { range, text } = change;
+            console.log(change,"change");
             const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
             const startIndx = startLineNumber - 1;
             const deleteCount = endLineNumber - startLineNumber + 1;
@@ -423,7 +424,7 @@ const handleEditorMount = async (editor, monaco) => {
                 deleteCount,
                 endIndx: endLineNumber - 1,
                 startColumn: startColumn - 1,
-                endColumn: endColumn - 1,
+                endColumn: (endColumn - 1),
                 newLines,
                 timeStamp: new Date().getTime(), // for consistent updates
             });
