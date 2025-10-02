@@ -65,7 +65,9 @@ Supports real-time cursor tracking, batched updates, and efficient compaction of
 - **Cursor emission latency:** ~30–80 ms  
 - **Text update latency:** ~100–200 ms  
 - **DB writes:** Batching reduces ops from 1000s → 10s  
-- **Compaction complexity:** amortized ~O(1)–O(n), runs in background  
+- **Compaction complexity:** amortized ~O(1)–O(n), runs in background
+- This project implements a custom text buffer inspired by ropes and CRDTs, using a LinkedList + Map hybrid for O(1) line access and update.
+- Keystroke operations are batched (coalesced) into larger diffs to reduce overhead.
 
 ---
 
