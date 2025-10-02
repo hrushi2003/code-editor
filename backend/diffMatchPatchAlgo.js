@@ -19,10 +19,7 @@ export const diffMatchPatchAlgo = (changedCodePos, codeDoc) => {
                 else {
                     var newLine = line.substring(0, startColumn) + newLines.join("") +
                         line.substring(endColumn);
-                    if (newLine.trim() == "") {
-                        codeDoc.code.splice(startIndx, 1);
-                    }
-                    else codeDoc.code[startIndx] = newLine;
+                    codeDoc.code[startIndx] = newLine;
                 }
            }
             else if (endIndx - startIndx > 0
