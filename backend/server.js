@@ -282,7 +282,7 @@ app.post('/Projects/update', async (req, res) => {
         codeId : codeDoc._id
     }).sort({
         version : -1
-    }).limit(1).project({version : 1});
+    }).limit(1);
     version = !version[0]?.version ? codeDoc.version + 1 : version[0].version + 1
     try {
         changedCodePos.forEach(patch => {
