@@ -86,15 +86,15 @@ function mergeOps(op1, op2) {
     }*/
     const startColumn = Math.min(first.startColumn, second.startColumn);
     const endColumn = Math.max(first.endColumn, second.endColumn);
-
+    const deleteCount = first.deleteCount != 0 ? first.deleteCount : second.deleteCount;
     const newString = first.newLines[0].substring(0, second.startColumn - first.startColumn) +
         second.newLines.join("") +
-        first.newLines[0].substring((second.startColumn + 1) - first.startColumn);
-
+        first.newLines[0].substring((second.startColumn) - first.startColumn + deleteCount);
+    const formatEndCol = ((endColumn - deleteCount) - (deleteCount > 0 ? endColumn > 0 ? 1 : 0 : 0));
     return {
         startIndx: first.startIndx,
         startColumn,
-        endColumn : endColumn,
+        endColumn : (startColumn + newString.length - 1) > 0 ? (startColumn + newString.length - 1) : 0,
         deleteCount: op1.deleteCount,
         newLines: [newString]
     };

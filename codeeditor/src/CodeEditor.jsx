@@ -63,7 +63,7 @@ const CodeEditor = (props) => {
     const [selectedBack, setSelectedBack] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [modalLoading, setModalLoading] = useState(false);
-    const [isRemote, setIsRemote] = useState(false);
+    const isRemote = useRef(false);
     const editorRef = useRef(null);
     const monacoE = useRef(null);
 
@@ -123,6 +123,9 @@ const CodeEditor = (props) => {
         getLan();
         socket.emit('authenticate', userId);
         console.log("Web socket connected", socket.connected);
+        socket.on('connect',() => {
+            console.log("socket connected");
+        })
         socket.on("connect_error", (err) => {
             // the reason of the error, for example "xhr poll error"
             console.log(err.message);
@@ -135,13 +138,13 @@ const CodeEditor = (props) => {
             socket.disconnect();
         }
     }, [userId]);
-    socket.on("updateCursorAndData", data => {
-        console.log("the socket is being called")
+    socket.on("updateCursorAndData", async data => {
+        console.log("the socket is being called",data)
         if (data != null) {
-            setIsRemote(true);
+            isRemote.current = true;
             // updateCursorPos(lineNo,columnNo);
-            //  setLine(data.changes);
-            setIsRemote(false);
+            await setLine(data.changes);
+            isRemote.current = false;
         }
     });
     useEffect(() => {
@@ -415,7 +418,7 @@ const CodeEditor = (props) => {
                 return;
             }
             const selection = editor.getSelection();
-            if (selectedBack && selection.startLineNumber != null || isRemote) {
+            if (selectedBack && selection.startLineNumber != null || isRemote.current) {
                 return;
             }
             const changes = event.changes;
@@ -424,7 +427,7 @@ const CodeEditor = (props) => {
                 console.log(change, "change");
                 const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
                 const startIndx = startLineNumber - 1;
-                const deleteCount = endLineNumber - startLineNumber + 1;
+                const deleteCount = (endColumn - startColumn);
                 const newLines = text.split("\n");
                 console.log(newLines)
                 patched.current.push({
@@ -483,7 +486,7 @@ const CodeEditor = (props) => {
         setSelectedLanguage(e.target.value);
     }
     const SendChanges = async (data) => {
-        membersRef.current?.forEach(async (member, indx) => {
+        membersRef.current?.filter(x => x._id != userId).forEach(async (member, indx) => {
             console.log(member._id, "is the member changing the data and the data is ", data,socket.connected);
             socket.emit('changeData', {
                 userId: member._id,
