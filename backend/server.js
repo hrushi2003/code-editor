@@ -278,7 +278,12 @@ app.post('/Projects/update', async (req, res) => {
     codeDoc.language = language;
     let opsToSave = [];
    if(operations == null || operations == 0) operations = codeDoc.version;
-    let version = codeDoc.version + 1;
+    let version = await Ops.find({
+        codeId : codeDoc._id
+    }).sort({
+        version : -1
+    }).limit(1).project({version : 1});
+    version = !version[0]?.version ? codeDoc.version + 1 : version[0].version + 1
     try {
         changedCodePos.forEach(patch => {
             const { startIndx, deleteCount, endIndx = startIndx, newLines, startColumn, endColumn } = patch;

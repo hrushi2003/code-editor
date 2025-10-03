@@ -87,9 +87,9 @@ function mergeOps(op1, op2) {
     const startColumn = Math.min(first.startColumn, second.startColumn);
     const endColumn = Math.max(first.endColumn, second.endColumn);
 
-    const newString = first.newLines[0].substring(0, second.startColumn) +
+    const newString = first.newLines[0].substring(0, second.startColumn - first.startColumn) +
         second.newLines.join("") +
-        first.newLines[0].substring(second.startColumn);
+        first.newLines[0].substring((second.startColumn + 1) - first.startColumn);
 
     return {
         startIndx: first.startIndx,

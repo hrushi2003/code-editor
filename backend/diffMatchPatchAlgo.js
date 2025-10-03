@@ -24,7 +24,7 @@ export const diffMatchPatchAlgo = (changedCodePos, codeDoc) => {
            }
             else if (endIndx - startIndx > 0
                 &&
-                (deleteCount > 1 && newLines.length == 1)
+                (newLines.length == 1)
             ) {
                 let codeAtPos = codeDoc.code[endIndx];
                 codeDoc.code[startIndx] += codeAtPos;
