@@ -134,12 +134,7 @@ const CodeEditor = (props) => {
             // some additional context, for example the XMLHttpRequest object
             console.log(err.context);
         });
-        return () => {
-            socket.disconnect();
-        }
-    }, [userId]);
-    socket.on("updateCursorAndData", async data => {
-        console.log("the socket is being called",data)
+        socket.on("updateCursorAndData", async data => {
         if (data != null) {
             isRemote.current = true;
             // updateCursorPos(lineNo,columnNo);
@@ -147,6 +142,10 @@ const CodeEditor = (props) => {
             isRemote.current = false;
         }
     });
+        return () => {
+            socket.disconnect();
+        }
+    }, [userId]);
     useEffect(() => {
         languageRef.current = selectedLanguage;
         updateCode();
