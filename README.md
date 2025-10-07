@@ -152,3 +152,46 @@ flowchart TD
         C3 --> C4
     end
 ```
+
+When working on real-time editors, every keystroke usually triggers a payload that’s sent to the backend.  
+This can quickly flood the network with redundant updates — especially when a user types fast or deletes characters continuously.  
+
+To tackle this, I implemented an **operation coalescing algorithm** that intelligently merges multiple nearby operations into a single optimized payload before synchronization.
+
+---
+
+### 🧩 How It Works
+
+- Each edit (insert or delete) is captured as an operation with metadata:
+  - `startIndex`
+  - `startColumn`
+  - `endColumn`
+  - `deleteCount`
+  - `newString`
+- Before sending updates, operations on the same line or in close proximity are **merged** using the `mergeOps()` function.
+- Both **insertions** and **deletions** are handled gracefully to maintain data integrity and consistent cursor behavior.
+- The result: fewer network calls, less load on the database, and a smoother collaborative experience.
+
+---
+
+### ✨ Before vs After
+
+| Case | Without Coalescing | With Coalescing |
+|------|--------------------|----------------|
+| Typing 24 characters | 24 payloads sent | **4 payloads** sent |
+| Reduction | — | **≈83.3% fewer payloads** 🚀 |
+
+---
+
+### 🧠 Example
+
+#### Before Coalescing
+```js
+[
+  { startColumn: 1, newString: "H" },
+  { startColumn: 2, newString: "e" },
+  { startColumn: 3, newString: "l" },
+  { startColumn: 4, newString: "l" },
+  { startColumn: 5, newString: "o" }
+]
+
