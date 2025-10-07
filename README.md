@@ -194,4 +194,10 @@ To tackle this, I implemented an **operation coalescing algorithm** that intelli
   { startColumn: 4, newString: "l" },
   { startColumn: 5, newString: "o" }
 ]
-
+```
+#### After Coalescing
+```js
+[
+  { startColumn : 1, newString : "Hello", endColumn : 5 }
+]
+```
