@@ -1,21 +1,21 @@
-const { LinkedList, Node: LinkedListNode } = require('./LinkedList');
-const map = new Map();
+const { LinkedList } = require('./LinkedList');
+let map = new Map();
 let lineMapping = new Map();
 let arrayOrder = new LinkedList();
 const ApplyCoalscing = (payload) => {
-    console.log(payload, "is the payload");
     const start = performance.now();
     for (let i = 0; i < payload.length; i++) {
-        batching(payload[i], map, "h");
+        const py = {...payload[i]};
+        batching(py, map, "h");
     }
     const res = arrayOrder.printText();
-    console.log(res);
     const ops = [];
     for (let i = 0; i < res.length; i++) {
         ops.push(map.get(res[i]));
     }
     arrayOrder = new LinkedList();
     lineMapping = new Map();
+    map = new Map();
     const end = performance.now();
     console.log(end - start, "process");
     return ops;
@@ -28,7 +28,7 @@ const batching = (bufferOps, map, text) => {
         map.set(id, bufferOps);
         arrayOrder.insertLineAfter(null, id, text);
     }
-    else if (bufferOps.newLines.length == 1) {
+    else if (bufferOps.newLines.length === 1) {
         const prevOps = map.get(indx);
         const newMergedOps = mergeOps(prevOps, bufferOps);
         if (newMergedOps) {
@@ -73,31 +73,32 @@ function mergeOps(op1, op2) {
         console.log("first", op1, "second", op2);
         throw new Error("Can't merge different lines");
     }
+
     let [first, second] = op1.startColumn <= op2.startColumn ? [op1, op2] : [op2, op1];
 
-   /* if (first.endColumn < second.startColumn) {
-        return {
-            startColumn: first.startColumn,
-            endColumn: second.endColumn,
-            startIndx: first.startIndx,
-            deleteCount: 1,
-            newLines: [first.newLines.join("") + second.newLines.join("")]
-        }
-    }*/
     const startColumn = Math.min(first.startColumn, second.startColumn);
-    const endColumn = Math.max(first.endColumn, second.endColumn);
-    const deleteCount = first.deleteCount != 0 ? first.deleteCount : second.deleteCount;
+
+    const totalDeleteCount = first.deleteCount + second.deleteCount;
+
+    const deleteCount = first.deleteCount !== 0 ? first.deleteCount : second.deleteCount;
+    first.newLines[0] = first.newLines[0].replace('/\r/g','');
     const newString = first.newLines[0].substring(0, second.startColumn - first.startColumn) +
-        second.newLines.join("") +
+        second.newLines.join("").replace('/\r/g', '') +
         first.newLines[0].substring((second.startColumn) - first.startColumn + deleteCount);
-    const formatEndCol = ((endColumn - deleteCount) - (deleteCount > 0 ? endColumn > 0 ? 1 : 0 : 0));
+
+    let endColumn;
+    if (newString.length === 0) {
+        // deletion only
+        endColumn = startColumn + totalDeleteCount;
+    } else {
+        endColumn = startColumn + newString.length - 1;
+    }
     return {
         startIndx: first.startIndx,
         startColumn,
-        endColumn : (startColumn + newString.length - 1) > 0 ? (startColumn + newString.length - 1) : 0,
-        deleteCount: op1.deleteCount,
+        endColumn: endColumn,
+        deleteCount: totalDeleteCount,
         newLines: [newString]
     };
 }
-
 export default ApplyCoalscing;

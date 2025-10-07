@@ -108,7 +108,7 @@ const CodeEditor = (props) => {
         const codeData = localStorage.getItem("codeId");
         const currLan = languageRef.current;
         await backendCall.post('/update', {
-            changedCodePos: patched.current,
+            changedCodePos: res,
             codeId: codeData,
             language: currLan
         }).then((data) => {
@@ -423,12 +423,10 @@ const CodeEditor = (props) => {
             const changes = event.changes;
             for (const change of changes) {
                 const { range, text } = change;
-                console.log(change, "change");
                 const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
                 const startIndx = startLineNumber - 1;
                 const deleteCount = (endColumn - startColumn);
                 const newLines = text.split("\n");
-                console.log(newLines)
                 patched.current.push({
                     startIndx,
                     deleteCount,
@@ -446,7 +444,6 @@ const CodeEditor = (props) => {
                     text,
                     timeStamp: new Date().getTime()
                 }
-                console.log(changeData, "ChangeData")
                 SendChanges(changeData);
             }
         })
@@ -463,7 +460,6 @@ const CodeEditor = (props) => {
                 const lan = response.data.code.language ? response.data.code.language : "java";
                 setSelectedLanguage(lan);
                 const assignedMembers = response.data.code.users.map(mem => mem.userId);
-                console.log(assignedMembers, "Are the assigned members");
                 setMembers(assignedMembers);
                 membersRef.current = assignedMembers;
             }).catch((err) => {
@@ -486,7 +482,6 @@ const CodeEditor = (props) => {
     }
     const SendChanges = async (data) => {
         membersRef.current?.filter(x => x._id != userId).forEach(async (member, indx) => {
-            console.log(member._id, "is the member changing the data and the data is ", data,socket.connected);
             socket.emit('changeData', {
                 userId: member._id,
                 changes: data

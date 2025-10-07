@@ -1,29 +1,29 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
-import  axios from 'axios';
-import { Button, Input, Modal,Spin } from 'antd';
+import axios from 'axios';
+import { Button, Input, Modal, Spin } from 'antd';
 import { toast, ToastContainer } from 'react-toastify';
 import { MdDelete } from 'react-icons/md';
 import { MdEdit } from 'react-icons/md';
 
 export const Profile = () => {
     const user = localStorage.getItem('userId');
-    const [open,setOpen] = useState(false);
-    const [spinning,setSpinning] = useState(false);
-    const [loading,setLoading] = useState(false);
-    const [projects,setProjects] = useState([])
+    const [open, setOpen] = useState(false);
+    const [spinning, setSpinning] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [projects, setProjects] = useState([])
     const [profile, setProfile] = useState({
-        username : {
-            name : "Hrushikesh",
-            isActive : false
+        username: {
+            name: "Hrushikesh",
+            isActive: false
         },
-        email : {
-            email : "hrushikesh@gmail.com",
-            isActive : false
+        email: {
+            email: "hrushikesh@gmail.com",
+            isActive: false
         },
-        password : {
-            password : "hrushikesh@123",
-            isActive : false,
+        password: {
+            password: "hrushikesh@123",
+            isActive: false,
         }
     });
     const showModal = () => {
@@ -33,46 +33,46 @@ export const Profile = () => {
         setOpen(false);
     }
     const token = localStorage.getItem('token');
-    const [currUser,setUser] = useState();
-    const [oldPassword,setOldPassword] = useState("");  
-    const [newPass,setNewPass] = useState();
+    const [currUser, setUser] = useState();
+    const [oldPassword, setOldPassword] = useState("");
+    const [newPass, setNewPass] = useState();
     const navigate = useNavigate();
     const apiCall = axios.create({
         baseURL: 'https://code-editor-1-0xyt.onrender.com',
-        timeout : 6000,
+        timeout: 6000,
         headers: {
             'Content-Type': 'application/json',
-            'Authorization' : `Bearer ${token}`
+            'Authorization': `Bearer ${token}`
         }
     });
-    const getProjects = async() => {
-            if(!token){
-                navigate('/login');
-            }
-            await apiCall.get('/getProjects').then((data) => {
-                console.log(data.data);
-                setProjects(data.data.projects);
-            }).catch((err) => {
-                console.log(err);
-                toast.error('error in fetching details',{
-                    position: "top-right",
-                    autoClose: 2000,
-                    hideProgressBar: false,
-                    closeOnClick: true,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme : "light"
-                });
+    const getProjects = async () => {
+        if (!token) {
+            navigate('/login');
+        }
+        await apiCall.get('/getProjects').then((data) => {
+            console.log(data.data);
+            setProjects(data.data.projects);
+        }).catch((err) => {
+            console.log(err);
+            toast.error('error in fetching details', {
+                position: "top-right",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light"
             });
+        });
     }
     useEffect(() => {
         getProjects();
-    },[])
-        const handleModal = async () => {
+    }, [])
+    const handleModal = async () => {
         setLoading(true);
-        if(oldPassword === "" || newPass === ""){
-            toast.error("Enter All Fields",{
+        if (oldPassword === "" || newPass === "") {
+            toast.error("Enter All Fields", {
                 position: "top-right",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -80,18 +80,18 @@ export const Profile = () => {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme : "light"
+                theme: "light"
             });
             setLoading(false);
             return;
         }
-        await apiCall.patch('/updatePass',{
-            userId : user,
-            oldPassword : oldPassword,
-            newPassword : newPass
+        await apiCall.patch('/updatePass', {
+            userId: user,
+            oldPassword: oldPassword,
+            newPassword: newPass
 
         }).then((data) => {
-            toast.success("Password updated successfully",{
+            toast.success("Password updated successfully", {
                 position: "top-right",
                 autoClose: 3000,
                 hideProgressBar: false,
@@ -99,10 +99,10 @@ export const Profile = () => {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme : "light"
+                theme: "light"
             });
         }).catch((err) => {
-            toast.error("Error updating password",{
+            toast.error("Error updating password", {
                 position: "top-right",
                 autoClose: 3000,
                 hideProgressBar: false,
@@ -110,7 +110,7 @@ export const Profile = () => {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme : "light"
+                theme: "light"
             });
         })
         setLoading(false);
@@ -118,22 +118,22 @@ export const Profile = () => {
     }
     const setUserProfile = async () => {
         setSpinning(true);
-        console.log(token,user);
-        await apiCall.get('/getUser',{
-            userId : user
+        console.log(token, user);
+        await apiCall.get('/getUser', {
+            userId: user
         }).then((data) => {
             setProfile({
-                username : {
-                    name : data.data.username,
-                    isActive : false
+                username: {
+                    name: data.data.username,
+                    isActive: false
                 },
-                email : {
-                    email : data.data.email,
-                    isActive : false
+                email: {
+                    email: data.data.email,
+                    isActive: false
                 }
             });
         }).catch((err) => {
-            toast.error("Error fetching user data",{
+            toast.error("Error fetching user data", {
                 position: "top-right",
                 autoClose: 3000,
                 hideProgressBar: false,
@@ -141,133 +141,133 @@ export const Profile = () => {
                 pauseOnHover: true,
                 draggable: true,
                 progress: undefined,
-                theme : "light"
+                theme: "light"
             });
         })
         setSpinning(false);
     }
 
-  return (
-    <div className='w-[100%] h-[100%] flex flex-col justify-center items-center'>
-        <ToastContainer />
-        <Spin spinning = {spinning} percent={40} fullscreen/>
-        <div className='flex flex-col mt-5 mx-auto items-center justify-center h-[100%]'>
-            <h1 className='text-[25px] font-bold text-blue-300'>PROFILE</h1>
-        </div>
-        <div className='w-[80%] h-[700px] flex flex-col gap-5 items-center border-2 mt-5 mx-auto p-5 rounded-lg'>
-            <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
-                <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>USERNAME : </h1>
-                <div className='w-[70%] my-auto items-center text-gray-400'>
-                    <Input type='text' className='w-[100%] text-[16px] font-bold'
-                    readOnly
-                    variant='filled'
-                    value={profile.username.name?.toUpperCase()}
-                    >
-                    </Input> 
-                </div>
+    return (
+        <div className='w-[100%] h-[100%] flex flex-col justify-center items-center'>
+            <ToastContainer />
+            <Spin spinning={spinning} percent={40} fullscreen />
+            <div className='flex flex-col mt-5 mx-auto items-center justify-center h-[100%]'>
+                <h1 className='text-[25px] font-bold text-blue-300'>PROFILE</h1>
             </div>
-            <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
-                <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>EMAIL : </h1>
-                <div className='w-[70%] my-auto items-center text-gray-400'>
-                    {!profile.username.isActive ?
-                    <Input type='text' className='w-[100%] text-[16px] font-bold'
-                    variant= {profile.email.email ? "filled" : "outlined"}
-                    onChange={(e) => {
-                        setProfile(prev => ({...prev, email: {email : e.target.value}}))
-                    }}
-                    onFocus={() => {
-                        setProfile((prev) => {
-                            prev.email.isActive = !prev.email.isActive;
-                            return prev;
-                        })
-                    }}
-                    value={profile.email.email?.toUpperCase()}
-                    >
-                    </Input>
-                    : (
-                    <Input type='text' className='w-[100%] text-[16px] font-bold text-black'
-                    onBlur ={() => {
-                        setProfile((prev) => {
-                            prev.email.isActive = !prev.email.isActive;
-                            return prev;
-                        })
-                    }}
-                    onChange={(e) => {
-                        setProfile(prev => ({...prev, email: {email: e.target.value}}))
-                    }}
-                    value={profile.email.email?.toUpperCase()}
-                    >
-                    </Input>  
-                    )}
-                </div>
-            </div>
-            <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
-                <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>PASSWORD : </h1>
-                <div className='w-[55%] my-auto items-center text-gray-400'>
-                    <Input className='w-[100%] text-[16px] font-bold'
-                    type = "password"
-                    value= {profile.password.password}
-                    variant='filled'
-                    readOnly
-                    >
-                    </Input>  
-                </div>
-                <div className='w-max items-center'>
-                    <Button
-                    onClick={showModal}
-                    className='w-max p-2 font-bold'
-                    type='primary'
-                    >Change Password
-                    </Button>
-                    <Modal
-                    title = "UPDATE PASSWORD"
-                    open = {open}
-                    onOk={handleModal}
-                    confirmLoading = {loading}
-                    onCancel={handleCancel}
-                    className='flex flex-col gap-3'
-                    >
-                        <Input
-                        className='w-[100%] text-[16px] font-bold'
-                        type = "password"
-                        placeholder='Enter Old Password'
-                        onChange={(e) => {
-                            setOldPassword(e.target.value);
-                        }}
-                        ></Input>
-                        <Input
-                        className='w-[100%] text-[16px] font-bold'
-                        type = "password"
-                        placeholder='Enter New Password'
-                        onChange={(e) => {
-                            setNewPass(e.target.value);
-                        }}
-                        ></Input>
-                    </Modal>
-                </div>
-            </div>
-            <div className='w-[100%] h-[60%] bg-blue-400 p-2 flex flex-col rounded-lg mt-5 items-center'>
-                <h1 className='text-white text-[15px] font-bold mt-2'>YOUR PROJECTS</h1>
-                <div className='bg-white w-[98%] flex flex-col items-center gap-2 h-[90%] overflow-auto hide-scrollbar rounded-lg mt-2 p-2'>
-                    {projects.map((data) => {
-                        return (
-                        <div key={data._id} className='w-[100%] flex flex-row bg-green-50 p-2 h-[50px] rounded-lg items-center'>
-                        <h1 className='text-[15px] flex font-bold text-blue-400 my-auto'>{data.codeName}</h1>
-                        <div className='flex ml-auto gap-2 items-center'>
-                            <MdDelete
-                             className='text-red-400 cursor-pointer'
-                             size={20}
-                             ></MdDelete>
-                             <MdEdit className='text-green-400 cursor-pointer'
-                             size={20}
-                             ></MdEdit>
-                        </div>
+            <div className='w-[80%] h-[700px] flex flex-col gap-5 items-center border-2 mt-5 mx-auto p-5 rounded-lg'>
+                <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
+                    <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>USERNAME : </h1>
+                    <div className='w-[70%] my-auto items-center text-gray-400'>
+                        <Input type='text' className='w-[100%] text-[16px] font-bold'
+                            readOnly
+                            variant='filled'
+                            value={profile.username.name?.toUpperCase()}
+                        >
+                        </Input>
                     </div>
-                        )
-                    })}
+                </div>
+                <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
+                    <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>EMAIL : </h1>
+                    <div className='w-[70%] my-auto items-center text-gray-400'>
+                        {!profile.username.isActive ?
+                            <Input type='text' className='w-[100%] text-[16px] font-bold'
+                                variant={profile.email.email ? "filled" : "outlined"}
+                                onChange={(e) => {
+                                    setProfile(prev => ({ ...prev, email: { email: e.target.value } }))
+                                }}
+                                onFocus={() => {
+                                    setProfile((prev) => {
+                                        prev.email.isActive = !prev.email.isActive;
+                                        return prev;
+                                    })
+                                }}
+                                value={profile.email.email?.toUpperCase()}
+                            >
+                            </Input>
+                            : (
+                                <Input type='text' className='w-[100%] text-[16px] font-bold text-black'
+                                    onBlur={() => {
+                                        setProfile((prev) => {
+                                            prev.email.isActive = !prev.email.isActive;
+                                            return prev;
+                                        })
+                                    }}
+                                    onChange={(e) => {
+                                        setProfile(prev => ({ ...prev, email: { email: e.target.value } }))
+                                    }}
+                                    value={profile.email.email?.toUpperCase()}
+                                >
+                                </Input>
+                            )}
+                    </div>
+                </div>
+                <div className='w-[100%] flex flex-row gap-3 items-center mx-auto'>
+                    <h1 className='text-[20px] w-[30%] font-bold text-blue-300'>PASSWORD : </h1>
+                    <div className='w-[55%] my-auto items-center text-gray-400'>
+                        <Input className='w-[100%] text-[16px] font-bold'
+                            type="password"
+                            value={profile.password.password}
+                            variant='filled'
+                            readOnly
+                        >
+                        </Input>
+                    </div>
+                    <div className='w-max items-center'>
+                        <Button
+                            onClick={showModal}
+                            className='w-max p-2 font-bold'
+                            type='primary'
+                        >Change Password
+                        </Button>
+                        <Modal
+                            title="UPDATE PASSWORD"
+                            open={open}
+                            onOk={handleModal}
+                            confirmLoading={loading}
+                            onCancel={handleCancel}
+                            className='flex flex-col gap-3'
+                        >
+                            <Input
+                                className='w-[100%] text-[16px] font-bold'
+                                type="password"
+                                placeholder='Enter Old Password'
+                                onChange={(e) => {
+                                    setOldPassword(e.target.value);
+                                }}
+                            ></Input>
+                            <Input
+                                className='w-[100%] text-[16px] font-bold'
+                                type="password"
+                                placeholder='Enter New Password'
+                                onChange={(e) => {
+                                    setNewPass(e.target.value);
+                                }}
+                            ></Input>
+                        </Modal>
+                    </div>
+                </div>
+                <div className='w-[100%] h-[60%] bg-blue-400 p-2 flex flex-col rounded-lg mt-5 items-center'>
+                    <h1 className='text-white text-[15px] font-bold mt-2'>YOUR PROJECTS</h1>
+                    <div className='bg-white w-[98%] flex flex-col items-center gap-2 h-[90%] overflow-auto hide-scrollbar rounded-lg mt-2 p-2'>
+                        {projects.map((data) => {
+                            return (
+                                <div key={data._id} className='w-[100%] flex flex-row bg-green-50 p-2 h-[50px] rounded-lg items-center'>
+                                    <h1 className='text-[15px] flex font-bold text-blue-400 my-auto'>{data.codeName}</h1>
+                                    <div className='flex ml-auto gap-2 items-center'>
+                                        <MdDelete
+                                            className='text-red-400 cursor-pointer'
+                                            size={20}
+                                        ></MdDelete>
+                                        <MdEdit className='text-green-400 cursor-pointer'
+                                            size={20}
+                                        ></MdEdit>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-  )
+    )
 }
