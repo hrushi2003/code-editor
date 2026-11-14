@@ -59,9 +59,13 @@ class LinkedList {
         if (node.prev) node.prev.next = node.next;
         if (node.next) node.next.prev = node.prev;
 
+        if (node === this.head) this.head = node.next;
+        if (node === this.tail) this.tail = node.prev;
+
         delete this.map[lineId];
-        delete this.map[lineId];
+
     }
+
     printText(){
         let temp = this.head;
         let arrayOrder =[]

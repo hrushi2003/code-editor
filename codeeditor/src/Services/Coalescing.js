@@ -81,9 +81,9 @@ function mergeOps(op1, op2) {
     const totalDeleteCount = first.deleteCount + second.deleteCount;
 
     const deleteCount = first.deleteCount !== 0 ? first.deleteCount : second.deleteCount;
-    first.newLines[0] = first.newLines[0].replace('/\r/g','');
+    first.newLines[0] = first.newLines[0].replace(/\r/g, '');
     const newString = first.newLines[0].substring(0, second.startColumn - first.startColumn) +
-        second.newLines.join("").replace('/\r/g', '') +
+        second.newLines.join("").replace(/\r/g, '') +
         first.newLines[0].substring((second.startColumn) - first.startColumn + deleteCount);
 
     let endColumn;
@@ -102,3 +102,4 @@ function mergeOps(op1, op2) {
     };
 }
 export default ApplyCoalscing;
+export { mergeOps };

@@ -1,12 +1,12 @@
 export const diffMatchPatchAlgo = (changedCodePos, codeDoc) => {
     try {
         changedCodePos.sort((a, b) => {
-            return new Date(a.timeStamps) - new Date(b.timeStamps);
+            return a.version - b.version;
         });
     }
     catch (error) {
-        err.message = "error in sorting";
-        throw err;
+        error.message = "error in sorting";
+        throw error;
     }
     try {
         changedCodePos.forEach(patch => {
@@ -40,9 +40,6 @@ export const diffMatchPatchAlgo = (changedCodePos, codeDoc) => {
                 const lineAtStart = codeDoc.code[startIndx];
                 const BeforeLine = lineAtStart.substring(0, startColumn);
                 codeDoc.code[startIndx] = BeforeLine + newLinesR[0];
-                if (newLinesR.length > 1 && startIndx + 1 > codeDoc.code.length - 1) {
-                    for (let i = 0; i < newLinesR.length; i++) codeDoc.code.push('');
-                }
                 for (let i = 1; i < newLinesR.length - 1; i++) {
                     codeDoc.code.splice(startIndx + i, 0, newLinesR[i]);
                 }

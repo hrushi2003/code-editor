@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import { CodeSchema } from "./models/codes.js";
 import { Ops } from "./models/Ops.js";
-import { console } from "inspector";
+import './models/ScheduleCompaction.js';
 import { diffMatchPatchAlgo } from "./diffMatchPatchAlgo.js";
 const app = express();
 app.use(bodyParser.json());
@@ -256,7 +256,8 @@ app.get('/Projects/getCode', async (req, res) => {
             result.version = operations + getAllOps.length;
             await result.save();
             operations = 0;
-            await Ops.deleteMany({ codeId: code._id });
+            const maxVersion = getAllOps.length ? getAllOps[getAllOps.length - 1].version : 0;
+            await Ops.deleteMany({ codeId: code._id, version: { $lte: maxVersion } });
             return res.status(200).json({ "code":  code, "ops": getAllOps, "res" : result });// result
         }
         catch (err) {
