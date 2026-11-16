@@ -11,7 +11,9 @@ import { useNavigate } from 'react-router-dom';
 import { EditOutlined } from '@ant-design/icons';
 import { DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import ApplyCoalscing from './Services/Coalescing';
-const socket = io('https://code-editor-1-0xyt.onrender.com', {
+
+import { APP_URL } from './config';
+const socket = io(APP_URL, {
     auth: {
         serverOffset: 0
     },
@@ -37,7 +39,7 @@ const CodeEditor = (props) => {
         }
     });
     const backendCall = axios.create({
-        baseURL: "https://code-editor-1-0xyt.onrender.com/Projects",
+        baseURL: `${APP_URL}/Projects`,
         timeout: 6000,
         headers: {
             'Content-Type': "application/json",
