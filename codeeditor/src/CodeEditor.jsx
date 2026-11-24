@@ -12,8 +12,8 @@ import { EditOutlined } from '@ant-design/icons';
 import { DeleteOutlined, UserOutlined } from '@ant-design/icons';
 import ApplyCoalscing from './Services/Coalescing';
 
-import { APP_URL } from './config';
-const socket = io(APP_URL, {
+import { API_URL } from './config';
+const socket = io(API_URL, {
     auth: {
         serverOffset: 0
     },
@@ -39,7 +39,7 @@ const CodeEditor = (props) => {
         }
     });
     const backendCall = axios.create({
-        baseURL: `${APP_URL}/Projects`,
+        baseURL: `${API_URL}/Projects`,
         timeout: 6000,
         headers: {
             'Content-Type': "application/json",

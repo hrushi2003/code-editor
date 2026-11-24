@@ -1,0 +1,28 @@
+services:
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      MONGO_URL: mongodb://mongo:27017/codeeditor
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./codeeditor
+      args:
+        REACT_APP_API_URL: http://localhost:3000
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
