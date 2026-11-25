@@ -11,6 +11,7 @@ import { CodeSchema } from "./models/codes.js";
 import { Ops } from "./models/Ops.js";
 import './models/ScheduleCompaction.js';
 import { diffMatchPatchAlgo } from "./diffMatchPatchAlgo.js";
+import {redis,projectsKey} from "./redisClient.js";
 const app = express();
 app.use(bodyParser.json());
 app.use(express.json());
@@ -152,8 +153,9 @@ app.patch('/updatePass', async (req, res) => {
     })
 });
 app.post('/createProject', async (req, res) => {
-    const { projectName, membersId } = req.body;
-    const tokenId = req.headers["authorization"].split(" ")[1];
+    const { projectName, membersId = [] } = req.body;
+
+    const tokenId = req.headers["authorization"]?.split(" ")[1];
     if (!tokenId) {
         return res.status(401).json({ message: "Unauthorized" });
     }
@@ -165,27 +167,39 @@ app.post('/createProject', async (req, res) => {
     if (!user) {
         return res.status(404).json({ message: "User is not found" });
     }
-    membersId.push(user._id);
-    const Code = new CodeSchema({
-        codeName: projectName,
-        users: membersId.map(id => ({ userId: id })),
-        leader: user._id,
-        code: [
-            "// DO AWESOME THINGS"
-        ]
-    });
-    Code.save().then((data) => {
-        console.log(data);
-        return res.json({ message: "Project created successfully", "code_id": data._id });
-    }
-    ).catch((err) => {
+
+    // creator + members, no duplicates
+    const allMembers = [...new Set([...membersId.map(String), String(user._id)])];
+
+    try {
+        const data = await new CodeSchema({
+            codeName: projectName,
+            users: allMembers.map(id => ({ userId: id })),
+            leader: user._id,
+            code: ["// DO AWESOME THINGS"]
+        }).save();
+
+        // Invalidate every member's cached project list (one round trip)
+        try {
+            if (redis.isReady) {
+                const keys = allMembers.map(projectsKey);
+                await redis.del(keys);
+                console.log("invalidated:", keys);
+            }
+        } catch (err) {
+            console.log("redis del failed:", err.message);
+        }
+
+        return res.json({ message: "Project created successfully", code_id: data._id });
+    } catch (err) {
         console.log(err);
         return res.status(500).send(err);
-    });
-
+    }
 });
 app.get('/getProjects', async (req, res) => {
-    const tokenId = req.headers["authorization"].split(" ")[1];
+    const start = performance.now();                                   // NEW: start timer
+
+    const tokenId = req.headers["authorization"]?.split(" ")[1];      // FIX: ?. so a missing header doesn't crash
     if (!tokenId) {
         return res.status(401).json({ message: "Unauthorized" });
     }
@@ -198,18 +212,39 @@ app.get('/getProjects', async (req, res) => {
         return res.status(404).json({ message: "User not found" });
     }
     try {
-        const projects = await CodeSchema.find({ users: { $elemMatch: { userId: user._id } } }).select([
-            "codeName",
-            "users",
-            "leader"
-        ]).populate({ path: 'users.userId', select: 'username' }).exec();
+        const cacheKey = projectsKey(user._id);
+        try {
+            if (redis.isReady) {
+                const cached = await redis.get(cacheKey);
+                if (cached) {
+                    console.log(`HIT  ${(performance.now() - start).toFixed(1)} ms`);   // NEW
+                    return res.status(200).json({ "projects": JSON.parse(cached) });
+                }
+            }
+        } catch (err) {
+            console.log("redis failed");
+        }
+
+        const projects = await CodeSchema.find({ users: { $elemMatch: { userId: user._id } } })
+            .select(["codeName", "users", "leader"])
+            .populate({ path: 'users.userId', select: 'username' })
+            .exec();
+
+        try {
+            if (redis.isReady) {
+                await redis.set(cacheKey, JSON.stringify(projects), { EX: 300 });   // FIX: added await
+            }
+        } catch (err) {
+            console.log("redis failed");
+        }
+
+        console.log(`MISS ${(performance.now() - start).toFixed(1)} ms`);        // NEW
         return res.status(200).json({ "projects": projects });
-    }
-    catch (err) {
+    } catch (err) {
         console.log(err);
         return res.status(500).send(err);
     }
-})
+});
 app.get('/getMembers', async (req, res) => {
     const tokenId = req.headers["authorization"].split(" ")[1];
     if (!tokenId) {
