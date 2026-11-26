@@ -13,4 +13,34 @@ try{
     console.error("Could not connect to redis, running without cache: ", err.message);
 }
 
+export const rateLimit = ({
+    limit = 100, windowSec = 60, keyPrefix = "rl"
+} = {}) => async (req,res,next) => {
+    if(!redis.isReady){
+        return next();
+    }
+
+    const id = req.userId || req.ip;
+    const key = `${keyPrefix}:${id}`;
+
+    try{
+        const count = await redis.incr(key);
+        if (count == 1) await redis.expire(key,windowSec);
+
+        const ttl = await redis.ttl(key);
+        res.set("X-RateLimit-Limit",limit);
+        res.set("X-RateLimit-Remaining", Math.max(0, limit - count));
+
+        if (count > limit) {
+            res.set("Retry-After", ttl);
+            return res.status(429).json({ message: `Too many requests. Try again in ${ttl}s.` });
+        }
+        next();
+
+    }catch(err){
+        console.log("rate limit failed");
+        next();
+    }
+}
+
 export const projectsKey = (userId) => `projects:${userId}`;

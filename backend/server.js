@@ -11,7 +11,7 @@ import { CodeSchema } from "./models/codes.js";
 import { Ops } from "./models/Ops.js";
 import './models/ScheduleCompaction.js';
 import { diffMatchPatchAlgo } from "./diffMatchPatchAlgo.js";
-import {redis,projectsKey} from "./redisClient.js";
+import {redis,projectsKey,rateLimit} from "./redisClient.js";
 const app = express();
 app.use(bodyParser.json());
 app.use(express.json());
@@ -65,7 +65,22 @@ const createToken = (id) => {
     return token;
 }
 
-app.post('/login', (req, res) => {
+const auth = (req, res, next) => {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
+    try {
+      req.userId = jwt.verify(token, process.env.SECRET_KEY).id;
+      next();                        // pass control to the route
+    } catch {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+  };
+
+app.post('/login', rateLimit({
+    limit : 10,
+    windowSec : 60,
+    keyPrefix : "rl"
+}), (req, res) => {
     const { username, password } = req.body;
     User.findOne({ username: username }).then((user) => {
         if (!user) {
@@ -115,28 +130,18 @@ app.post('/register', async (req, res) => {
         return res.status(500).send(err);
     })
 });
-app.get('/getUser', async (req, res) => {
-    const tokenId = req.headers["authorization"].split(" ")[1];
-    if (!tokenId) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
-    const user_id = jwt.decode(tokenId);
-    if (!user_id) {
-        return res.status(404).json({ message: "User is not logged in" });
-    }
-    const user = await User.findById(user_id.id);
-    if (!user) {
-        return res.status(404).json({ message: user, userId });
-    }
+app.get('/getUser',auth, async (req, res) => {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
     return res.status(200).json({
         "username": user.username,
         "email": user.email
     })
 });
 
-app.patch('/updatePass', async (req, res) => {
+app.patch('/updatePass', auth, async (req, res) => {
     const { userId, oldPassword, newPassword } = req.body;
-    const user = await User.findById(userId);
+    const user = await User.findById(req.userId);
     const isValidPassword = await bcrypt.compare(oldPassword, user.password);
     if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid password" });
@@ -152,21 +157,10 @@ app.patch('/updatePass', async (req, res) => {
         return res.status(500).send(err);
     })
 });
-app.post('/createProject', async (req, res) => {
+app.post('/createProject',auth, async (req, res) => {
     const { projectName, membersId = [] } = req.body;
-
-    const tokenId = req.headers["authorization"]?.split(" ")[1];
-    if (!tokenId) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
-    const user_id = jwt.decode(tokenId);
-    if (!user_id) {
-        return res.status(404).json({ message: "User is not logged in" });
-    }
-    const user = await User.findById(user_id.id);
-    if (!user) {
-        return res.status(404).json({ message: "User is not found" });
-    }
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     // creator + members, no duplicates
     const allMembers = [...new Set([...membersId.map(String), String(user._id)])];
@@ -196,21 +190,12 @@ app.post('/createProject', async (req, res) => {
         return res.status(500).send(err);
     }
 });
-app.get('/getProjects', async (req, res) => {
+app.get('/getProjects', auth, rateLimit(), async (req, res) => {
     const start = performance.now();                                   // NEW: start timer
 
-    const tokenId = req.headers["authorization"]?.split(" ")[1];      // FIX: ?. so a missing header doesn't crash
-    if (!tokenId) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
-    const user_id = jwt.decode(tokenId);
-    if (!user_id) {
-        return res.status(404).json({ message: "User is not logged in" });
-    }
-    const user = await User.findById(user_id.id);
-    if (!user) {
-        return res.status(404).json({ message: "User not found" });
-    }
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     try {
         const cacheKey = projectsKey(user._id);
         try {
@@ -245,19 +230,10 @@ app.get('/getProjects', async (req, res) => {
         return res.status(500).send(err);
     }
 });
-app.get('/getMembers', async (req, res) => {
-    const tokenId = req.headers["authorization"].split(" ")[1];
-    if (!tokenId) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
-    const user_id = jwt.decode(tokenId);
-    if (!user_id) {
-        return res.status(404).json({ message: "User is not logged in" });
-    }
-    const user = await User.findById(user_id.id);
-    if (!user) {
-        return res.status(404).json({ message: "User not found" });
-    }
+app.get('/getMembers', auth, async (req, res) => {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
     try {
         const members = await User.find({ username: { $ne: user.username } }).select(["username"]).exec();
         return res.status(200).json({ "members": members });
@@ -334,7 +310,7 @@ app.post('/Projects/update', async (req, res) => {
                     endColumn,
                     deleteCount
                 },
-                changedBy: "6728a1ad243625be55ec5cb9", // change it to req.userId
+                changedBy: req.userId, 
                 timestamps: patch.timeStamp
             }));
         });
